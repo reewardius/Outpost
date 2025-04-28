@@ -30,6 +30,6 @@ chmod +x general_easm.sh && bash general_easm.sh
 ## Features:
 - Domain and network services reconnaissance.
 - Vulnerability, misconfiguration and secrets scanning.
-- Fast scanning using custom Nuclei templates.
+- Fast scanning using default and custom Nuclei templates.
 - Includes templates for FUZZ testing (DAST).
 - Report generation for deeper analysis (example report: `general_report.html`).
