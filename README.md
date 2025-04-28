@@ -4,6 +4,7 @@ Tool for reconnaissance, bruteforce, vulnerability scanning, misconfiguration an
 
 **Install ProjectDiscovery Tools:**
 ```
+git clone https://github.com/reewardius/palka-kopalka-1337 && cd palka-kopalka-1337
 go install -v github.com/projectdiscovery/pdtm/cmd/pdtm@latest && pdtm -install-all
 git clone https://github.com/reewardius/nuclei-fast-templates
 git clone https://github.com/reewardius/nuclei-dast-templates
