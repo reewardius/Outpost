@@ -2,6 +2,12 @@
 
 🔎 A tool for reconnaissance, bruteforce, vulnerability scanning, misconfiguration detection, and secret leakage discovery in web and network services, with handy report generation for further analysis.
 
+## **Requirements:**
+
+- Golang (for installing pdtm tools)
+- Bash
+- Linux or WSL
+
 ## Install ProjectDiscovery Tools and Templates:
 
 ```bash
@@ -26,4 +32,4 @@ chmod +x general_easm.sh && bash general_easm.sh
 - Vulnerability, misconfiguration and secrets scanning.
 - Fast scanning using custom Nuclei templates.
 - Includes templates for FUZZ testing (DAST).
-- Report generation for deeper analysis.
+- Report generation for deeper analysis (example report: `general_report.html`).
