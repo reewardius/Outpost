@@ -1,16 +1,28 @@
-# palka-kopalka-1337
+# Palka-Kopalka-1337
 
-Tool for reconnaissance, bruteforce, vulnerability scanning, misconfiguration and secret leakage in web and network services with generating a handy report for further analysis.
+🔎 A tool for reconnaissance, bruteforce, vulnerability scanning, misconfiguration detection, and secret leakage discovery in web and network services, with handy report generation for further analysis.
 
-**Install ProjectDiscovery Tools:**
-```
+## Install ProjectDiscovery Tools and Templates:
+
+```bash
 git clone https://github.com/reewardius/palka-kopalka-1337 && cd palka-kopalka-1337
 go install -v github.com/projectdiscovery/pdtm/cmd/pdtm@latest && pdtm -install-all
 git clone https://github.com/reewardius/nuclei-fast-templates
 git clone https://github.com/reewardius/nuclei-dast-templates
 ```
 
-**Run:**
-```
+## Run:
+
+```bash
+nano root.txt   # Add root domains for scanning
 chmod +x general_easm.sh && bash general_easm.sh
 ```
+
+---
+
+## Features:
+- Domain and network services reconnaissance.
+- Vulnerability, misconfiguration and secrets scanning.
+- Fast scanning using custom Nuclei templates.
+- Includes templates for FUZZ testing (DAST).
+- Report generation for deeper analysis.
