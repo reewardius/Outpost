@@ -14,6 +14,7 @@
 ```bash
 go install -v github.com/projectdiscovery/pdtm/cmd/pdtm@latest && pdtm -install-all
 go install github.com/projectdiscovery/katana/cmd/katana@v1.1.0
+go install -v github.com/sa7mon/s3scanner@latest
 go install github.com/003random/getJS/v2@latest
 go install github.com/ffuf/ffuf/v2@latest
 pipx install uro
