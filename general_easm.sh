@@ -2,12 +2,15 @@
 set -e
 set -o pipefail
 
-rm -f subs.txt naabu.txt alive_http_services.txt fuzz_results.json fuzz_output.txt fp_domains.txt fp_domains_alive.txt nuclei_config_exposures.txt passive.txt katana_uniq.txt katana.txt sensitive_matches.txt sensitive.txt js.txt juicypath_matches.txt juicypath.txt second_order_takeover.txt js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt general.txt katana.jsonl nuclei-dast-templates-results.txt nuclei_fast_templates.txt
+rm -f subs.txt naabu.txt alive_http_services.txt fuzz_results.json fuzz_output.txt fp_domains.txt fp_domains_alive.txt nuclei_config_exposures.txt passive.txt katana_uniq.txt katana.txt sensitive_matches.txt sensitive.txt js.txt juicypath_matches.txt juicypath.txt second_order_takeover.txt js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt general.txt katana.jsonl nuclei-dast-templates-results.txt nuclei_fast_templates.txt s3scanner.txt
 
 echo "[*] Starting Recon..."
 subfinder -dL root.txt -all -silent -o subs.txt
 naabu -l subs.txt -s s -tp 100 -ec -c 50 -o naabu.txt
 httpx -l naabu.txt -rl 500 -t 200 -o alive_http_services.txt
+
+echo "[*] Starting S3Scanner..."
+s3scanner -bucket-file subs.txt -provider aws -threads 16 | grep exists > s3scanner.txt
 
 echo "[*] Starting Fuzzing..."
 ffuf -u URL/TOP -w alive_http_services.txt:URL -w top.txt:TOP -t 1000 -ac -mc 200 -o fuzz_results.json -fs 0
