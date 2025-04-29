@@ -58,6 +58,36 @@ def parse_url_list_file(file_path):
     
     return results
 
+def parse_s3scanner_file(file_path):
+    """Парсит файл с результатами S3Scanner"""
+    results = []
+    
+    if not os.path.exists(file_path):
+        print(f"Предупреждение: Файл '{file_path}' не найден.")
+        return results
+    
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+            # Регулярное выражение для извлечения данных из строк S3Scanner
+            pattern = r'level=info msg="exists\s+\|\s+(.*?)\s+\|\s+(.*?)\s+\|\s+AuthUsers:\s+(.*?)\s+\|\s+AllUsers:\s+(.*?)"'
+            
+            for match in re.finditer(pattern, content):
+                bucket_name, region, auth_users, all_users = match.groups()
+                
+                results.append({
+                    "bucket_name": bucket_name.strip(),
+                    "region": region.strip(),
+                    "auth_users": auth_users.strip(),
+                    "all_users": all_users.strip()
+                })
+                
+    except Exception as e:
+        print(f"Ошибка при чтении файла {file_path}: {e}")
+    
+    return results
+
 def generate_html_report(vulnerabilities, input_filename, additional_files=None):
     if additional_files is None:
         additional_files = {}
@@ -114,6 +144,7 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
         .ffuf h2 {{ background-color: #9b59b6; }}
         .sensitive h2 {{ background-color: #8e44ad; }}
         .juicypath h2 {{ background-color: #16a085; }}
+        .s3scanner h2 {{ background-color: #27ae60; }}
         
         .vuln-table {{
             width: 100%;
@@ -149,6 +180,13 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
         /* Для таблиц с двумя колонками (URL-результаты) */
         .two-col-table th:nth-child(1), .two-col-table td:nth-child(1) {{ width: 10%; }}
         .two-col-table th:nth-child(2), .two-col-table td:nth-child(2) {{ width: 90%; }}
+        
+        /* Для таблицы S3Scanner */
+        .s3scanner-table th:nth-child(1), .s3scanner-table td:nth-child(1) {{ width: 5%; }}
+        .s3scanner-table th:nth-child(2), .s3scanner-table td:nth-child(2) {{ width: 30%; }}
+        .s3scanner-table th:nth-child(3), .s3scanner-table td:nth-child(3) {{ width: 20%; }}
+        .s3scanner-table th:nth-child(4), .s3scanner-table td:nth-child(4) {{ width: 20%; }}
+        .s3scanner-table th:nth-child(5), .s3scanner-table td:nth-child(5) {{ width: 25%; }}
         
         .vuln-url {{
             word-break: break-all;
@@ -290,6 +328,9 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
             from {{opacity: 0;}}
             to {{opacity: 1;}}
         }}
+        .highlight-row {{
+            background-color: #ffe0b2 !important;
+        }}
     </style>
 </head>
 <body>
@@ -335,7 +376,8 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
         if file_data and len(file_data) > 0:
             file_name = {"ffuf": "Ffuf находки", 
                          "sensitive": "Sensitive находки", 
-                         "juicypath": "JuicyPath находки"}.get(file_type, file_type)
+                         "juicypath": "JuicyPath находки",
+                         "s3scanner": "S3Scanner находки"}.get(file_type, file_type)
             html_output += f"""
                 <tr>
                     <td>{file_name}</td>
@@ -356,7 +398,8 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
         if file_data and len(file_data) > 0:
             tab_name = {"ffuf": "Ffuf", 
                         "sensitive": "Sensitive", 
-                        "juicypath": "JuicyPath"}.get(file_type, file_type.capitalize())
+                        "juicypath": "JuicyPath",
+                        "s3scanner": "S3Scanner"}.get(file_type, file_type.capitalize())
             html_output += f"""
             <button class="tablinks" onclick="openTab(event, '{file_type.capitalize()}Tab')">{tab_name}</button>
 """
@@ -437,9 +480,50 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
             tab_name = file_type.capitalize()
             tab_title = {"ffuf": "FFUF РЕЗУЛЬТАТЫ", 
                          "sensitive": "SENSITIVE РЕЗУЛЬТАТЫ", 
-                         "juicypath": "JUICYPATH РЕЗУЛЬТАТЫ"}.get(file_type, f"{file_type.upper()} РЕЗУЛЬТАТЫ")
+                         "juicypath": "JUICYPATH РЕЗУЛЬТАТЫ",
+                         "s3scanner": "S3SCANNER РЕЗУЛЬТАТЫ"}.get(file_type, f"{file_type.upper()} РЕЗУЛЬТАТЫ")
             
-            html_output += f"""
+            if file_type == "s3scanner":
+                # Специальный шаблон для S3Scanner
+                html_output += f"""
+        <div id="{tab_name}Tab" class="tabcontent">
+            <div class="{file_type}">
+                <h2>{tab_title}</h2>
+                <table class="vuln-table s3scanner-table">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Имя бакета</th>
+                            <th>Регион</th>
+                            <th>AuthUsers</th>
+                            <th>AllUsers</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+"""
+                for i, bucket_data in enumerate(file_data, 1):
+                    bucket_name = html.escape(bucket_data["bucket_name"])
+                    region = html.escape(bucket_data["region"])
+                    auth_users = html.escape(bucket_data["auth_users"])
+                    all_users = html.escape(bucket_data["all_users"])
+                    
+                    # Выделяем строки с правами доступа READ для AllUsers
+                    row_class = ""
+                    if "READ" in all_users:
+                        row_class = "highlight-row"
+                    
+                    html_output += f"""
+                        <tr class="{row_class}">
+                            <td>{i}</td>
+                            <td>{bucket_name}</td>
+                            <td>{region}</td>
+                            <td>{auth_users}</td>
+                            <td>{all_users}</td>
+                        </tr>
+"""
+            else:
+                # Стандартный шаблон для остальных файлов
+                html_output += f"""
         <div id="{tab_name}Tab" class="tabcontent">
             <div class="{file_type}">
                 <h2>{tab_title}</h2>
@@ -452,10 +536,9 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
                     </thead>
                     <tbody>
 """
-
-            for i, url in enumerate(file_data, 1):
-                url_escaped = html.escape(url)
-                html_output += f"""
+                for i, url in enumerate(file_data, 1):
+                    url_escaped = html.escape(url)
+                    html_output += f"""
                         <tr>
                             <td>{i}</td>
                             <td class="vuln-url"><a href="{url_escaped}" target="_blank">{url_escaped}</a></td>
@@ -554,6 +637,12 @@ def main():
         juicypath_results = parse_url_list_file(juicypath_file)
         if juicypath_results:
             additional_files["juicypath"] = juicypath_results
+        
+        # Обрабатываем s3scanner.txt
+        s3scanner_file = os.path.join(base_dir, "s3scanner.txt")
+        s3scanner_results = parse_s3scanner_file(s3scanner_file)
+        if s3scanner_results:
+            additional_files["s3scanner"] = s3scanner_results
         
         # Генерируем отчет с учетом всех дополнительных файлов
         html_report = generate_html_report(vulnerabilities, input_file, additional_files)
