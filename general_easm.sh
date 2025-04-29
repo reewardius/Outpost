@@ -10,7 +10,7 @@ naabu -l subs.txt -s s -tp 100 -ec -c 50 -o naabu.txt
 httpx -l naabu.txt -rl 500 -t 200 -o alive_http_services.txt
 
 echo "[*] Starting S3Scanner..."
-s3scanner -bucket-file subs.txt -provider aws -threads 16 | grep exists > s3scanner.txt
+s3scanner -bucket-file subs.txt -provider aws -threads 16 | grep exists > s3scanner.txt || true
 
 echo "[*] Starting Fuzzing..."
 ffuf -u URL/TOP -w alive_http_services.txt:URL -w top.txt:TOP -t 1000 -ac -mc 200 -o fuzz_results.json -fs 0
