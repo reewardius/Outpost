@@ -26,7 +26,7 @@ echo "[*] Collecting Sensitive Data from Wayback Archive..."
 katana -u root.txt -ps -o katana.txt
 python3 sensitive.py
 httpx -l sensitive_matches.txt -mc 200 -o sensitive.txt
-httpx -l juicypath_matches.txt -mc 200 -o juicypath.txt
+httpx -l juicypath_matches.txt -mc 200 -o juicy_temp.txt && uro -i juicy_temp.txt -o juicypath.txt && rm -f juicy_temp.txt
 
 echo "[*] Starting Second-Order Hijacking..."
 rm -f domains_output/*.txt && python3 links.py
