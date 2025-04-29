@@ -13,6 +13,8 @@
 ```bash
 go install -v github.com/projectdiscovery/pdtm/cmd/pdtm@latest && pdtm -install-all
 go install github.com/projectdiscovery/katana/cmd/katana@v1.1.0
+go install github.com/003random/getJS/v2@latest
+pipx install uro
 git clone https://github.com/reewardius/palka-kopalka-1337 && cd palka-kopalka-1337
 git clone https://github.com/reewardius/nuclei-fast-templates
 git clone https://github.com/reewardius/nuclei-dast-templates
