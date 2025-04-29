@@ -5,6 +5,7 @@
 ## **Requirements:**
 
 - Golang (for installing pdtm tools)
+- Python3
 - Bash
 - Linux or WSL
 
