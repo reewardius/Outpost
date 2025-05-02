@@ -30,7 +30,7 @@ else
     exit 1
 fi
 
-# Очистка предыдущих результатов
+# Очистка предедущих результатов
 rm -f subs.txt naabu.txt alive_http_services.txt fuzz_results.json fuzz_output.txt fp_domains.txt fp_domains_alive.txt nuclei_config_exposures.txt passive.txt katana_uniq.txt katana.txt sensitive_matches.txt sensitive.txt js.txt juicypath_matches.txt juicypath.txt second_order_takeover.txt js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt general.txt katana.jsonl nuclei-dast-templates-results.txt nuclei_fast_templates.txt s3scanner.txt part_* part_*.out
 
 echo "[*] Starting Recon..."
@@ -75,7 +75,7 @@ elif [[ "$1" == "-d" ]]; then
     bash nuclei.sh
 fi
 
-# Логика запуска кастомных шаблонов и JS сканирования
+# Логика запуска кастомных шаблонов и JS шаблонов
 if [[ "$1" == "-f" ]]; then
     echo "[*] Nuclei Custom Fast Templates Scanning..."
     chmod +x nuclei-fast-templates.sh
