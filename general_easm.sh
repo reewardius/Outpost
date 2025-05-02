@@ -2,7 +2,7 @@
 set -e
 set -o pipefail
 
-# Проверка аргументов
+# РџСЂРѕРІРµСЂРєР° Р°СЂРіСѓРјРµРЅС‚РѕРІ
 if [[ "$1" == "-f" && -n "$2" ]]; then
     echo "[*] Using domain list from file: $2"
     DOMAIN_MODE="file"
@@ -30,7 +30,7 @@ else
     exit 1
 fi
 
-# Очистка предедущих результатов
+# РћС‡РёСЃС‚РєР° РїСЂРµРґРµРґСѓС‰РёС… СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ
 rm -f subs.txt naabu.txt alive_http_services.txt fuzz_results.json fuzz_output.txt fp_domains.txt fp_domains_alive.txt nuclei_config_exposures.txt passive.txt katana_uniq.txt katana.txt sensitive_matches.txt sensitive.txt js.txt juicypath_matches.txt juicypath.txt second_order_takeover.txt js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt general.txt katana.jsonl nuclei-dast-templates-results.txt nuclei_fast_templates.txt s3scanner.txt part_* part_*.out
 
 echo "[*] Starting Recon..."
@@ -75,7 +75,7 @@ elif [[ "$1" == "-d" ]]; then
     bash nuclei.sh
 fi
 
-# Логика запуска кастомных шаблонов и JS шаблонов
+# Р›РѕРіРёРєР° Р·Р°РїСѓСЃРєР° РєР°СЃС‚РѕРјРЅС‹С… С€Р°Р±Р»РѕРЅРѕРІ Рё JS С€Р°Р±Р»РѕРЅРѕРІ
 if [[ "$1" == "-f" ]]; then
     echo "[*] Nuclei Custom Fast Templates Scanning..."
     chmod +x nuclei-fast-templates.sh
