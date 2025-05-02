@@ -31,7 +31,6 @@ You can run the script in two ways:
 Create a file (e.g., root.txt) and add your target domains, one per line:
 ```bash
 nano root.txt   # Add root domains for scanning
-chmod +x general_easm.sh && bash general_easm.sh
 ```
 Then run the script like this:
 ```bash
@@ -39,14 +38,9 @@ bash general_easm.sh -f root.txt
 ```
 **2. Using a single domain directly**
 
-You can also scan a single domain without a file:
+You can also scan a single domain:
 ```bash
 bash general_easm.sh -d target.com
-```
-You can include http:// or https:// if needed:
-
-```bash
-bash general_easm.sh -d https://target.com
 ```
 ---
 
