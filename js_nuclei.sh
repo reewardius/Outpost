@@ -29,5 +29,3 @@ cat part_*.out > js_nuclei.txt
 
 # Удаление временных файлов
 rm -f part_* part_*.out
-
-echo "Готово. Результаты сохранены в js_nuclei.txt"

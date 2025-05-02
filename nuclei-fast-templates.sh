@@ -19,7 +19,7 @@ rm -f part_* part_*.out nuclei_fast_templates.txt
 split -n l/3 "$INPUT_FILE" part_
 
 # Запуск nuclei параллельно для каждой части
-parallel -j 3 "nuclei -l {} -etags fuzzing-req,cache,logs,backup,listing,android,ios,ssrf -rl 1000 -c 100 -t nuclei-fast-templates/ -o {}.out" ::: part_*
+parallel -j 3 "nuclei -l {} -eid web-cache-poisoning,cache-poisoning-fuzz -etags fuzzing-req,logs,backup,listing,android,ios,ssrf -rl 1000 -c 100 -t nuclei-fast-templates/ -o {}.out" ::: part_*
 
 # Объединение всех выходных файлов в один
 cat part_*.out > nuclei_fast_templates.txt

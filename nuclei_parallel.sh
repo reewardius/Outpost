@@ -26,5 +26,3 @@ cat part_*.out > nuclei.txt
 
 # Удаление временных файлов
 rm -f part_* part_*.out
-
-echo "Готово. Результаты сохранены в nuclei.txt"

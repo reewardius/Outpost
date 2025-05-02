@@ -1,11 +1,11 @@
 import requests
 import os
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 
 # Входной файл со списком сайтов
-input_file = "subs.txt"
+input_file = "alive_http_services.txt"
 output_dir = "domains_output"
 
 # Количество потоков
@@ -22,32 +22,20 @@ def extract_domain(url):
     parsed = urlparse(url)
     return parsed.netloc if parsed.netloc else None
 
-# Функция нормализации URL (добавляет https:// если отсутствует)
-def normalize_url(site):
-    parsed = urlparse(site)
-    if not parsed.scheme:
-        return f"https://{site}"  # По умолчанию пробуем HTTPS
-    return site
-
-# Функция проверки доступности (HTTPS → HTTP fallback)
+# Функция проверки доступности (HTTP или HTTPS)
 def fetch_site(site_url):
     headers = {"User-Agent": "Mozilla/5.0"}
+
+    parsed = urlparse(site_url)
     
-    normalized_url = normalize_url(site_url)
-    parsed = urlparse(normalized_url)
-
-    # Сначала пробуем HTTPS, если не работает — HTTP
-    for scheme in ["https", "http"]:
-        test_url = urlunparse((scheme, parsed.netloc, parsed.path, "", "", ""))
-        try:
-            response = requests.get(test_url, headers=headers, timeout=10)
-            response.raise_for_status()
-            return response.text, parsed.netloc  # Возвращаем HTML + домен
-        except requests.RequestException:
-            print(f"[-] {test_url} недоступен, пробуем {scheme.upper()}...")
-
-    print(f"[!] {site_url} недоступен по HTTP и HTTPS, скипаем.")
-    return None, None
+    # Проверяем, доступен ли сайт по указанному протоколу (HTTP или HTTPS)
+    try:
+        response = requests.get(site_url, headers=headers, timeout=10)
+        response.raise_for_status()
+        return response.text, parsed.netloc  # Возвращаем HTML + домен
+    except requests.RequestException:
+        print(f"[-] {site_url} недоступен.")
+        return None, None
 
 # Функция парсинга доменов
 def get_domains(html):
@@ -72,7 +60,7 @@ def write_to_full_file(domains):
 def process_site(site):
     print(f"[+] Обрабатываем: {site}")
 
-    # Получаем HTML (HTTPS → HTTP fallback) + домен
+    # Получаем HTML + домен
     html, site_domain = fetch_site(site)
     if not html or not site_domain:
         return
@@ -87,7 +75,7 @@ def process_site(site):
     if domains:
         with open(filename, "w", encoding="utf-8") as outfile:
             outfile.write("\n".join(sorted(domains)))
-        print(f"    -> Найдено {len(domains)} доменов, сохранено в {filename}")
+        print(f"    -> Найдено {len(domains)} доменов, сохранено в {filename}.")
 
         # Записываем домены в общий файл
         write_to_full_file(domains)
