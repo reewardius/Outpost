@@ -1,4 +1,4 @@
-# Palka-Kopalka-1337
+# Outpost
 
 🔎 A tool for reconnaissance, bruteforce, vulnerability scanning, misconfiguration detection, and secret leakage discovery in web and network services, with handy report generation for further analysis.
 
