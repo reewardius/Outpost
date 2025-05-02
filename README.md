@@ -39,7 +39,7 @@ bash general_easm.sh -f root.txt
 
 You can also scan a single domain:
 ```bash
-bash general_easm.sh -d target.com
+bash general_easm.sh -d https://target.com
 ```
 ---
 
