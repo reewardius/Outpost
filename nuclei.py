@@ -107,7 +107,7 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Отчет по уязвимостям: {html.escape(report_title)}</title>
+    <title>Vulnerability Report: {html.escape(report_title)}</title>
     <style>
         body {{
             font-family: Arial, sans-serif;
@@ -335,11 +335,11 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
 </head>
 <body>
     <div class="container">
-        <h1>Отчет по уязвимостям</h1>
-        <div class="source-file">Исходный файл: {html.escape(input_filename)}</div>
+        <h1>Vulnerability Report</h1>
+        <div class="source-file">Vulnerability Report File: {html.escape(input_filename)}</div>
         
         <div class="summary">
-            <h3>Сводная информация</h3>
+            <h3>Summary information</h3>
             <table class="summary-table">
                 <tr>
                     <td>Critical</td>
@@ -374,10 +374,10 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
     # Добавляем информацию о дополнительных файлах в таблицу
     for file_type, file_data in additional_files.items():
         if file_data and len(file_data) > 0:
-            file_name = {"ffuf": "Ffuf находки", 
-                         "sensitive": "Sensitive находки", 
-                         "juicypath": "JuicyPath находки",
-                         "s3scanner": "S3Scanner находки"}.get(file_type, file_type)
+            file_name = {"ffuf": "Ffuf findings", 
+                         "sensitive": "Sensitive findings", 
+                         "juicypath": "JuicyPath findings",
+                         "s3scanner": "S3Scanner findings"}.get(file_type, file_type)
             html_output += f"""
                 <tr>
                     <td>{file_name}</td>
@@ -430,10 +430,10 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
                     <table class="vuln-table">
                         <thead>
                             <tr>
-                                <th>CVE/Тип</th>
-                                <th>Протокол</th>
+                                <th>CVE/Template</th>
+                                <th>Protocol</th>
                                 <th>URL</th>
-                                <th>Дополнительная информация</th>
+                                <th>Additional information</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -478,10 +478,10 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
     for file_type, file_data in additional_files.items():
         if file_data and len(file_data) > 0:
             tab_name = file_type.capitalize()
-            tab_title = {"ffuf": "FFUF РЕЗУЛЬТАТЫ", 
-                         "sensitive": "SENSITIVE РЕЗУЛЬТАТЫ", 
-                         "juicypath": "JUICYPATH РЕЗУЛЬТАТЫ",
-                         "s3scanner": "S3SCANNER РЕЗУЛЬТАТЫ"}.get(file_type, f"{file_type.upper()} РЕЗУЛЬТАТЫ")
+            tab_title = {"ffuf": "FFUF RESULTS", 
+                         "sensitive": "SENSITIVE RESULTS", 
+                         "juicypath": "JUICYPATH RESULTS",
+                         "s3scanner": "S3SCANNER RESULTS"}.get(file_type, f"{file_type.upper()} РЕЗУЛЬТАТЫ")
             
             if file_type == "s3scanner":
                 # Специальный шаблон для S3Scanner
@@ -588,7 +588,7 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
     current_date = datetime.now().strftime("%d.%m.%Y %H:%M")
     html_output += f"""
         <footer>
-            Отчет сгенерирован: {current_date}
+            Report generated: {current_date}
         </footer>
     </div>
 </body>
