@@ -27,7 +27,7 @@ You can run the script in two ways:
 
 **1. Using a file with root domains**
 
-Create a file (e.g., root.txt) and add your target domains, one per line:
+Create a file (e.g., root.txt) and add your target **ROOT** domains, one per line:
 ```bash
 nano root.txt   # Add root domains for scanning
 ```
