@@ -31,7 +31,7 @@ else
 fi
 
 # Очистка предедущих результатов
-rm -f subs.txt naabu.txt alive_http_services.txt fuzz_results.json fuzz_output.txt fp_domains_alive.txt nuclei_config_exposures.txt passive.txt katana_uniq.txt katana.txt sensitive_matches.txt sensitive.txt js.txt juicypath_matches.txt juicypath.txt second_order_takeover.txt js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt general.txt katana.jsonl nuclei-dast-templates-results.txt nuclei_fast_templates.txt s3scanner.txt part_* part_*.out op.txt fuzz_output1.txt fuzz_output2.txt paths.txt fp_domains1.txt fp_domains2.txt
+rm -f subs.txt naabu.txt alive_http_services.txt fuzz_results.json fuzz_output.txt fp_domains_alive.txt nuclei_config_exposures.txt passive.txt katana_uniq.txt katana.txt sensitive_matches.txt sensitive.txt js.txt juicypath_matches.txt juicypath.txt second_order_takeover.txt js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt general.txt katana.jsonl nuclei-dast-templates-results.txt nuclei_fast_templates.txt s3scanner.txt part_* part_*.out op.txt fuzz_output1.txt fuzz_output2.txt paths.txt fp_domains1.txt fp_domains2.txt new_paths.txt
 
 echo "[*] Starting Recon..."
 if [ "$RUN_SUBFINDER" = true ]; then
@@ -64,8 +64,8 @@ httpx -l juicypath_matches.txt -mc 200 -o juicy_temp.txt && uro -i juicy_temp.tx
 
 echo "[*] Starting Fuzzing Multiple Paths from Wayback Archive..."
 uro -i katana.txt -o op.txt
-cat op.txt | unfurl format %p | anew paths.txt > /dev/null 2>&1
-rm -f fuzz_results.json && ffuf -u URL/TOP -w alive_http_services.txt:URL -w paths.txt:TOP -t 1000 -ac -mc 200 -o fuzz_results.json -fs 0
+cat op.txt | unfurl format %p | anew paths.txt > /dev/null 2>&1 && sed 's|^/||' paths.txt > new_paths.txt
+rm -f fuzz_results.json && ffuf -u URL/TOP -w alive_http_services.txt:URL -w new_paths.txt:TOP -t 1000 -ac -mc 200 -o fuzz_results.json -fs 0
 python3 delete_falsepositives.py -j fuzz_results.json -o fuzz_output2.txt -fp fp_domains2.txt
 cat fuzz_output1.txt fuzz_output2.txt | sort -u > fuzz_output.txt
 
