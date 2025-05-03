@@ -50,7 +50,7 @@ httpx -l fp_domains.txt -rl 500 -t 200 -o fp_domains_alive.txt
 nuclei -l fp_domains_alive.txt -tags config,exposure -es unknown -c 100 -rl 1000 -o nuclei_config_exposures.txt
 
 echo "[*] Starting Active Crawling..."
-katana -u alive_http_services.txt -ef js,json,png,css,jpg,jpeg,woff2,svg -c 150 -p 150 -rl 1000 -ct 5m -aff -j -o katana.jsonl
+katana -u alive_http_services.txt -d 5 -ef js,json,png,css,jpg,jpeg,woff2,svg -c 150 -p 150 -rl 1000 -ct 5m -aff -iqp -j -o katana.jsonl
 
 echo "[*] Katana Passive Crawl from Wayback Archive..."
 katana -u "$ROOT_INPUT" -ps -f qurl -o passive.txt
