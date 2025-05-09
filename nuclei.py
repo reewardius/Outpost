@@ -493,8 +493,8 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
                     <thead>
                         <tr>
                             <th>№</th>
-                            <th>Имя бакета</th>
-                            <th>Регион</th>
+                            <th>Bucket Name</th>
+                            <th>Region</th>
                             <th>AuthUsers</th>
                             <th>AllUsers</th>
                         </tr>
