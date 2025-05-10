@@ -8,9 +8,17 @@ if [[ "$1" == "-f" && -n "$2" ]]; then
     DOMAIN_MODE="file"
     TARGET_FILE="$2"
     ROOT_INPUT="$TARGET_FILE"
-    RUN_SUBFINDER=true
-    SUBFINDER_CMD="subfinder -dL $TARGET_FILE -all -silent -o subs.txt"
-    NAABU_CMD="naabu -l subs.txt -s s -tp 100 -ec -c 50 -o naabu.txt"
+    
+    if [[ "$3" == "-ds" ]]; then
+        # Пропуск subfinder и передача доменов напрямую в naabu
+        echo "[*] Skipping Subfinder, passing domains directly to naabu"
+        RUN_SUBFINDER=false
+        NAABU_CMD="naabu -l $TARGET_FILE -s s -tp 100 -ec -c 50 -o naabu.txt"
+    else
+        RUN_SUBFINDER=true
+        SUBFINDER_CMD="subfinder -dL $TARGET_FILE -all -silent -o subs.txt"
+        NAABU_CMD="naabu -l subs.txt -s s -tp 100 -ec -c 50 -o naabu.txt"
+    fi
 elif [[ "$1" == "-d" && -n "$2" ]]; then
     RAW_DOMAIN="$2"
     TARGET_DOMAIN=$(echo "$RAW_DOMAIN" | sed -E 's|https?://||' | cut -d/ -f1)
@@ -40,7 +48,7 @@ else
 fi
 
 # Очистка предедущих результатов
-rm -f subs.txt naabu.txt alive_http_services.txt fuzz_results.json fuzz_output.txt fp_domains_alive.txt nuclei_config_exposures.txt passive.txt katana_uniq.txt katana.txt sensitive_matches.txt sensitive.txt js.txt juicypath_matches.txt juicypath.txt second_order_takeover.txt js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt general.txt katana.jsonl nuclei-dast-templates-results.txt nuclei_fast_templates.txt s3scanner.txt part_* part_*.out op.txt fuzz_output1.txt fuzz_output2.txt paths.txt fp_domains1.txt fp_domains2.txt new_paths.txt
+rm -f subs.txt naabu.txt alive_http_services.txt fuzz_results.json fuzz_output.txt fp_domains_alive.txt fuzz_output1.txt fuzz_output2.txt paths.txt fp_domains1.txt fp_domains2.txt new_paths.txt
 
 echo "[*] Starting Recon..."
 if [ "$RUN_SUBFINDER" = true ]; then
@@ -118,6 +126,6 @@ echo "[*] Nuclei Active DAST Scanning..."
 nuclei -l katana.jsonl -im jsonl -itags blind-xss -t nuclei-dast-templates/ -pc 100 -c 100 -rl 1000 -bs 100 -o nuclei-dast-templates-results.txt
 
 echo "[*] Merging Results and Generating Final Report..."
-cat js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt nuclei_fast_templates.txt second_order_takeover.txt nuclei_config_exposures.txt nuclei-dast-templates-results.txt | sort -u > general.txt && python3 nuclei.py general.txt
+cat js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt nuclei_fast_templates.txt second_order_takeover.txt nuclei_config_exposures.txt nuclei-dast-templates-results.txt | sort -u > general.txt && python3 nuclei2.py general.txt
 
 echo "[*] General Nuclei Report Generated -> Open general_report.html"
