@@ -118,6 +118,6 @@ echo "[*] Nuclei Active DAST Scanning..."
 nuclei -l katana.jsonl -im jsonl -itags blind-xss -t nuclei-dast-templates/ -pc 100 -c 100 -rl 1000 -bs 100 -o nuclei-dast-templates-results.txt
 
 echo "[*] Merging Results and Generating Final Report..."
-cat js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt nuclei_fast_templates.txt second_order_takeover.txt nuclei_config_exposures.txt nuclei-dast-templates-results.txt | sort -u > general.txt && python3 nuclei2.py general.txt
+cat js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt nuclei_fast_templates.txt second_order_takeover.txt nuclei_config_exposures.txt nuclei-dast-templates-results.txt | sort -u > general.txt && python3 nuclei.py general.txt
 
 echo "[*] General Nuclei Report Generated -> Open general_report.html"
