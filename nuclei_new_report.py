@@ -6,6 +6,11 @@ import json
 from collections import defaultdict, Counter
 from datetime import datetime
 
+def strip_ansi_codes(text):
+    """Remove ANSI escape codes from text"""
+    ansi_pattern = r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])'
+    return re.sub(ansi_pattern, '', text)
+
 def parse_vulnerabilities(text):
     # Регулярное выражение для извлечения основных данных
     pattern = r'\[(.*?)\] \[(.*?)\] \[(.*?)\] (.*?)(?=$)'
@@ -39,11 +44,11 @@ def parse_vulnerabilities(text):
     return vulns
 
 def parse_url_list_file(file_path):
-    """Парсит файл с URL-ами, по одному на строку"""
+    """Parse a file with URLs, one per line"""
     results = []
     
     if not os.path.exists(file_path):
-        print(f"Предупреждение: Файл '{file_path}' не найден.")
+        print(f"Warning: File '{file_path}' not found.")
         return results
     
     try:
@@ -53,16 +58,16 @@ def parse_url_list_file(file_path):
                 if url and url.startswith(('http://', 'https://')):
                     results.append(url)
     except Exception as e:
-        print(f"Ошибка при чтении файла {file_path}: {e}")
+        print(f"Error reading file {file_path}: {e}")
     
     return results
 
 def parse_s3scanner_file(file_path):
-    """Парсит файл с результатами S3Scanner"""
+    """Parse a file with S3Scanner results"""
     results = []
     
     if not os.path.exists(file_path):
-        print(f"Предупреждение: Файл '{file_path}' не найден.")
+        print(f"Warning: File '{file_path}' not found.")
         return results
     
     try:
@@ -79,30 +84,30 @@ def parse_s3scanner_file(file_path):
                     "all_users": all_users.strip()
                 })
     except Exception as e:
-        print(f"Ошибка при чтении файла {file_path}: {e}")
+        print(f"Error reading file {file_path}: {e}")
     
     return results
 
 def parse_subs_file(file_path):
-    """Парсит файл subs.txt с доменами, по одному на строку"""
+    """Parse subs.txt with domains, one per line"""
     if not os.path.exists(file_path):
-        print(f"Предупреждение: Файл 'subs.txt' не найден, используется значение по умолчанию: 1")
+        print(f"Warning: File 'subs.txt' not found, using default value: 1")
         return 1
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             domains = {line.strip() for line in f if line.strip()}
-        print(f"Найдено уникальных доменов в subs.txt: {len(domains)}")
+        print(f"Found unique domains in subs.txt: {len(domains)}")
         return len(domains)
     except Exception as e:
-        print(f"Ошибка при чтении файла {file_path}: {e}")
+        print(f"Error reading file {file_path}: {e}")
         return 1
 
 def parse_alive_http_services_file(file_path):
-    """Парсит файл alive_http_services.txt с живыми хостами"""
+    """Parse alive_http_services.txt with live hosts"""
     results = []
     
     if not os.path.exists(file_path):
-        print(f"Предупреждение: Файл 'alive_http_services.txt' не найден.")
+        print(f"Warning: File 'alive_http_services.txt' not found.")
         return 0
     
     try:
@@ -112,18 +117,18 @@ def parse_alive_http_services_file(file_path):
                 if url and url.startswith(('http://', 'https://')):
                     results.append(url)
         unique_hosts = len(set(results))
-        print(f"Найдено уникальных живых хостов: {unique_hosts}")
+        print(f"Found unique live hosts: {unique_hosts}")
         return unique_hosts
     except Exception as e:
-        print(f"Ошибка при чтении файла {file_path}: {e}")
+        print(f"Error reading file {file_path}: {e}")
         return 0
 
 def parse_katana_file(file_path):
-    """Парсит файл katana.jsonl, возвращая уникальные endpoint"""
+    """Parse katana.jsonl, returning unique endpoints"""
     endpoints = set()
     
     if not os.path.exists(file_path):
-        print(f"Предупреждение: Файл 'katana.jsonl' не найден.")
+        print(f"Warning: File 'katana.jsonl' not found.")
         return endpoints
     
     try:
@@ -135,19 +140,19 @@ def parse_katana_file(file_path):
                     if endpoint:
                         endpoints.add(endpoint)
                 except json.JSONDecodeError as e:
-                    print(f"Ошибка парсинга JSON в строке: {e}")
-        print(f"Найдено уникальных endpoints в katana.jsonl: {len(endpoints)}")
+                    print(f"Error parsing JSON in line: {e}")
+        print(f"Found unique endpoints in katana.jsonl: {len(endpoints)}")
         return endpoints
     except Exception as e:
-        print(f"Ошибка при чтении файла {file_path}: {e}")
+        print(f"Error reading file {file_path}: {e}")
         return endpoints
 
 def parse_naabu_file(file_path):
-    """Парсит файл naabu.txt с результатами сканирования портов"""
+    """Parse naabu.txt with port scanning results"""
     ports = []
     
     if not os.path.exists(file_path):
-        print(f"Предупреждение: Файл 'naabu.txt' не найден.")
+        print(f"Warning: File 'naabu.txt' not found.")
         return ports
     
     try:
@@ -159,18 +164,18 @@ def parse_naabu_file(file_path):
                     if port.isdigit():
                         ports.append(port)
         port_counts = Counter(ports)
-        print(f"Найдено портов в naabu.txt: {len(ports)}, уникальных: {len(port_counts)}")
+        print(f"Found ports in naabu.txt: {len(ports)}, unique: {len(port_counts)}")
         return port_counts
     except Exception as e:
-        print(f"Ошибка при чтении файла {file_path}: {e}")
+        print(f"Error reading file {file_path}: {e}")
         return ports
 
 def parse_katana_uniq_file(file_path):
-    """Парсит файл katana_uniq.txt с уникальными URL-ами"""
+    """Parse katana_uniq.txt with unique URLs"""
     urls = set()
     
     if not os.path.exists(file_path):
-        print(f"Предупреждение: Файл 'katana_uniq.txt' не найден.")
+        print(f"Warning: File 'katana_uniq.txt' not found.")
         return urls
     
     try:
@@ -179,11 +184,56 @@ def parse_katana_uniq_file(file_path):
                 url = line.strip()
                 if url and url.startswith(('http://', 'https://')):
                     urls.add(url)
-        print(f"Найдено уникальных URL-ов в katana_uniq.txt: {len(urls)}")
+        print(f"Found unique URLs in katana_uniq.txt: {len(urls)}")
         return urls
     except Exception as e:
-        print(f"Ошибка при чтении файла {file_path}: {e}")
+        print(f"Error reading file {file_path}: {e}")
         return urls
+
+def parse_tech_detect_file(file_path):
+    """Parse tech-detect.txt with HTTP status codes and technologies"""
+    status_codes = []
+    technologies = []
+    
+    if not os.path.exists(file_path):
+        print(f"Warning: File 'tech-detect.txt' not found.")
+        return Counter(), Counter()
+    
+    try:
+        # Пробуем открыть с учетом возможного BOM
+        with open(file_path, 'r', encoding='utf-8-sig') as f:
+            content = f.readlines()
+            print(f"Read {len(content)} lines from tech-detect.txt")
+            for i, line in enumerate(content, 1):
+                line = line.strip()
+                if not line:
+                    print(f"Line {i}: Empty line, skipping")
+                    continue
+                # Удаляем ANSI escape-коды
+                clean_line = strip_ansi_codes(line)
+                print(f"Processing line {i}: {clean_line}")
+                # Упрощенное регулярное выражение
+                match = re.match(r'^(.*?)\s*\[(\d+)\](?:\s*\[(.*?)\])?$', clean_line)
+                if match:
+                    url, status_code, tech_list = match.groups()
+                    print(f"Line {i} matched: URL={url}, Status={status_code}, Techs={tech_list}")
+                    status_codes.append(status_code)
+                    if tech_list:
+                        techs = [tech.strip() for tech in tech_list.split(',') if tech.strip()]
+                        print(f"Technologies found: {techs}")
+                        technologies.extend(techs)
+                    else:
+                        print(f"No technologies found in line {i}")
+                else:
+                    print(f"Line {i} did not match regex: {clean_line}")
+        status_counts = Counter(status_codes)
+        tech_counts = Counter(technologies)
+        print(f"Found status codes in tech-detect.txt: {len(status_codes)}, unique: {len(status_counts)}")
+        print(f"Found technologies in tech-detect.txt: {len(technologies)}, unique: {len(tech_counts)}")
+        return status_counts, tech_counts
+    except Exception as e:
+        print(f"Error reading file {file_path}: {e}")
+        return Counter(), Counter()
 
 def generate_html_report(vulnerabilities, input_filename, additional_files=None):
     if additional_files is None:
@@ -214,16 +264,17 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
     # Получение данных для Top 10 Ports из naabu.txt
     port_counts = parse_naabu_file(os.path.join(base_dir, "naabu.txt"))
     top_ports = dict(sorted(port_counts.items(), key=lambda x: x[1], reverse=True)[:10])
-    if not top_ports:
-        top_ports = {"80": 100, "443": 80, "8080": 20, "22": 10, "21": 5, "3306": 3, "5432": 2, "3389": 1, "445": 1, "23": 1}
     
-    # Заглушки для других графиков
-    http_status_codes = {"200": 50, "404": 30, "403": 15, "500": 5}
-    top_tech = {"Apache": 40, "Nginx": 30, "PHP": 20, "JavaScript": 15, "Python": 10, "MySQL": 8, "PostgreSQL": 7, "Redis": 5, "MongoDB": 3, "WordPress": 2}
+    # Получение данных для HTTP Status Codes и Top 10 Technologies из tech-detect.txt
+    status_counts, tech_counts = parse_tech_detect_file(os.path.join(base_dir, "tech-detect.txt"))
+    http_status_codes = dict(sorted(status_counts.items(), key=lambda x: x[1], reverse=True)[:10])
+    top_tech = dict(sorted(tech_counts.items(), key=lambda x: x[1], reverse=True)[:10])
     
     # Отладочные сообщения
-    print(f"Значения для Dashboard: unique_assets={unique_assets}, live_assets={live_assets}, app_endpoints={app_endpoints}, urls_found={urls_found}")
+    print(f"Dashboard values: unique_assets={unique_assets}, live_assets={live_assets}, app_endpoints={app_endpoints}, urls_found={urls_found}")
     print(f"Top 10 Ports: {top_ports}")
+    print(f"HTTP Status Codes: {http_status_codes}")
+    print(f"Top 10 Technologies: {top_tech}")
     
     # HTML шаблон
     report_title = os.path.splitext(os.path.basename(input_filename))[0]
@@ -375,6 +426,12 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
             border-radius: 4px;
             margin: 20px 0;
         }}
+        .no-results {{
+            text-align: center;
+            color: #7f8c8d;
+            font-style: italic;
+            margin: 20px 0;
+        }}
         .severity-badge {{
             display: inline-block;
             padding: 3px 6px;
@@ -523,7 +580,7 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
                     <td>{len(vuln_by_severity.get("unknown", []))}</td>
                 </tr>
                 <tr>
-                    <td>Всего</td>
+                    <td>Total</td>
                     <td>{len(vulnerabilities)}</td>
                 </tr>
 """
@@ -588,15 +645,36 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
                 </div>
                 <div class="chart-container">
                     <h3>HTTP Status Codes</h3>
-                    <canvas id="statusChart"></canvas>
+"""
+
+    if http_status_codes:
+        html_output += '<canvas id="statusChart"></canvas>'
+    else:
+        html_output += '<p class="no-results">No results</p>'
+
+    html_output += """
                 </div>
                 <div class="chart-container">
                     <h3>Top 10 Ports</h3>
-                    <canvas id="portsChart"></canvas>
+"""
+
+    if top_ports:
+        html_output += '<canvas id="portsChart"></canvas>'
+    else:
+        html_output += '<p class="no-results">No results</p>'
+
+    html_output += """
                 </div>
                 <div class="chart-container">
                     <h3>Top 10 Technologies</h3>
-                    <canvas id="techChart"></canvas>
+"""
+
+    if top_tech:
+        html_output += '<canvas id="techChart"></canvas>'
+    else:
+        html_output += '<p class="no-results">No results</p>'
+
+    html_output += f"""
                 </div>
                 <div class="chart-container">
                     <h3>URLs Found</h3>
@@ -611,7 +689,7 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
     if not vulnerabilities:
         html_output += """
             <div class="no-vulns">
-                <p>В отчете не найдено уязвимостей. Проверьте формат входного файла.</p>
+                <p>No vulnerabilities found in the report. Please check the input file format.</p>
             </div>
         """
     else:
@@ -674,7 +752,7 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
             tab_title = {"ffuf": "FFUF RESULTS", 
                          "sensitive": "SENSITIVE RESULTS", 
                          "juicypath": "JUICYPATH RESULTS",
-                         "s3scanner": "S3SCANNER RESULTS"}.get(file_type, f"{file_type.upper()} РЕЗУЛЬТАТЫ")
+                         "s3scanner": "S3SCANNER RESULTS"}.get(file_type, f"{file_type.upper()} RESULTS")
             
             if file_type == "s3scanner":
                 html_output += f"""
@@ -684,7 +762,7 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
                 <table class="vuln-table s3scanner-table">
                     <thead>
                         <tr>
-                            <th>№</th>
+                            <th>#</th>
                             <th>Bucket Name</th>
                             <th>Region</th>
                             <th>AuthUsers</th>
@@ -720,7 +798,7 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
                 <table class="vuln-table two-col-table">
                     <thead>
                         <tr>
-                            <th>№</th>
+                            <th>#</th>
                             <th>URL</th>
                         </tr>
                     </thead>
@@ -788,7 +866,11 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
                     }}
                 }}
             }});
-            
+"""
+
+    # Добавляем JavaScript для графиков только если есть данные
+    if http_status_codes:
+        html_output += f"""
             // График HTTP Status Codes
             new Chart(document.getElementById('statusChart'), {{
                 type: 'bar',
@@ -809,7 +891,10 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
                     }}
                 }}
             }});
-            
+"""
+
+    if top_ports:
+        html_output += f"""
             // График Top 10 Ports
             new Chart(document.getElementById('portsChart'), {{
                 type: 'bar',
@@ -830,7 +915,10 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
                     }}
                 }}
             }});
-            
+"""
+
+    if top_tech:
+        html_output += f"""
             // График Top 10 Technologies
             new Chart(document.getElementById('techChart'), {{
                 type: 'bar',
@@ -851,7 +939,9 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
                     }}
                 }}
             }});
-            
+"""
+
+    html_output += f"""
             // График URLs Found
             new Chart(document.getElementById('urlsChart'), {{
                 type: 'bar',
@@ -890,13 +980,13 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
 
 def main():
     if len(sys.argv) != 2:
-        print("Использование: python nuclei.py путь_к_файлу.txt")
+        print("Usage: python nuclei.py input_file.txt")
         sys.exit(1)
     
     input_file = sys.argv[1]
     
     if not os.path.exists(input_file):
-        print(f"Ошибка: Файл '{input_file}' не найден.")
+        print(f"Error: File '{input_file}' not found.")
         sys.exit(1)
     
     try:
@@ -935,14 +1025,14 @@ def main():
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(html_report)
         
-        print(f"Отчет успешно сгенерирован и сохранен в файл: {output_file}")
-        print(f"Всего обработано уязвимостей Nuclei: {len(vulnerabilities)}")
+        print(f"Report successfully generated and saved to: {output_file}")
+        print(f"Total Nuclei vulnerabilities processed: {len(vulnerabilities)}")
         
         for file_type, results in additional_files.items():
-            print(f"Всего обработано результатов {file_type.capitalize()}: {len(results)}")
+            print(f"Total {file_type.capitalize()} results processed: {len(results)}")
         
     except Exception as e:
-        print(f"Ошибка при обработке файла: {e}")
+        print(f"Error processing file: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
