@@ -366,7 +366,7 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
                     <td>{len(vuln_by_severity.get("unknown", []))}</td>
                 </tr>
                 <tr>
-                    <td>Всего</td>
+                    <td>All Vulnerabilities</td>
                     <td>{len(vulnerabilities)}</td>
                 </tr>
 """
