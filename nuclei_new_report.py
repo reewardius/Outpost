@@ -3,7 +3,7 @@ import sys
 import os
 import html
 import json
-from collections import defaultdict
+from collections import defaultdict, Counter
 from datetime import datetime
 
 def parse_vulnerabilities(text):
@@ -119,12 +119,12 @@ def parse_alive_http_services_file(file_path):
         return 0
 
 def parse_katana_file(file_path):
-    """Парсит файл katana.jsonl, подсчитывая уникальные endpoint"""
+    """Парсит файл katana.jsonl, возвращая уникальные endpoint"""
     endpoints = set()
     
     if not os.path.exists(file_path):
         print(f"Предупреждение: Файл 'katana.jsonl' не найден.")
-        return 0
+        return endpoints
     
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -137,10 +137,53 @@ def parse_katana_file(file_path):
                 except json.JSONDecodeError as e:
                     print(f"Ошибка парсинга JSON в строке: {e}")
         print(f"Найдено уникальных endpoints в katana.jsonl: {len(endpoints)}")
-        return len(endpoints)
+        return endpoints
     except Exception as e:
         print(f"Ошибка при чтении файла {file_path}: {e}")
-        return 0
+        return endpoints
+
+def parse_naabu_file(file_path):
+    """Парсит файл naabu.txt с результатами сканирования портов"""
+    ports = []
+    
+    if not os.path.exists(file_path):
+        print(f"Предупреждение: Файл 'naabu.txt' не найден.")
+        return ports
+    
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and ':' in line:
+                    port = line.split(':')[-1]
+                    if port.isdigit():
+                        ports.append(port)
+        port_counts = Counter(ports)
+        print(f"Найдено портов в naabu.txt: {len(ports)}, уникальных: {len(port_counts)}")
+        return port_counts
+    except Exception as e:
+        print(f"Ошибка при чтении файла {file_path}: {e}")
+        return ports
+
+def parse_katana_uniq_file(file_path):
+    """Парсит файл katana_uniq.txt с уникальными URL-ами"""
+    urls = set()
+    
+    if not os.path.exists(file_path):
+        print(f"Предупреждение: Файл 'katana_uniq.txt' не найден.")
+        return urls
+    
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                url = line.strip()
+                if url and url.startswith(('http://', 'https://')):
+                    urls.add(url)
+        print(f"Найдено уникальных URL-ов в katana_uniq.txt: {len(urls)}")
+        return urls
+    except Exception as e:
+        print(f"Ошибка при чтении файла {file_path}: {e}")
+        return urls
 
 def generate_html_report(vulnerabilities, input_filename, additional_files=None):
     if additional_files is None:
@@ -158,16 +201,29 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
     base_dir = os.path.dirname(input_filename)
     unique_assets = parse_subs_file(os.path.join(base_dir, "subs.txt"))
     live_assets = parse_alive_http_services_file(os.path.join(base_dir, "alive_http_services.txt"))
-    app_endpoints = parse_katana_file(os.path.join(base_dir, "katana.jsonl"))
+    
+    # Получение endpoints из katana.jsonl
+    katana_endpoints = parse_katana_file(os.path.join(base_dir, "katana.jsonl"))
+    app_endpoints = len(katana_endpoints)
+    
+    # Получение URLs из katana.jsonl и katana_uniq.txt для URLs Found
+    katana_uniq_urls = parse_katana_uniq_file(os.path.join(base_dir, "katana_uniq.txt"))
+    all_urls = katana_endpoints | katana_uniq_urls
+    urls_found = len(all_urls)
+    
+    # Получение данных для Top 10 Ports из naabu.txt
+    port_counts = parse_naabu_file(os.path.join(base_dir, "naabu.txt"))
+    top_ports = dict(sorted(port_counts.items(), key=lambda x: x[1], reverse=True)[:10])
+    if not top_ports:
+        top_ports = {"80": 100, "443": 80, "8080": 20, "22": 10, "21": 5, "3306": 3, "5432": 2, "3389": 1, "445": 1, "23": 1}
+    
+    # Заглушки для других графиков
+    http_status_codes = {"200": 50, "404": 30, "403": 15, "500": 5}
+    top_tech = {"Apache": 40, "Nginx": 30, "PHP": 20, "JavaScript": 15, "Python": 10, "MySQL": 8, "PostgreSQL": 7, "Redis": 5, "MongoDB": 3, "WordPress": 2}
     
     # Отладочные сообщения
-    print(f"Значения для Dashboard: unique_assets={unique_assets}, live_assets={live_assets}, app_endpoints={app_endpoints}")
-    
-    # Заглушки для графиков
-    http_status_codes = {"200": 50, "404": 30, "403": 15, "500": 5}
-    top_ports = {"80": 100, "443": 80, "8080": 20, "22": 10, "21": 5, "3306": 3, "5432": 2, "3389": 1, "445": 1, "23": 1}
-    top_tech = {"Apache": 40, "Nginx": 30, "PHP": 20, "JavaScript": 15, "Python": 10, "MySQL": 8, "PostgreSQL": 7, "Redis": 5, "MongoDB": 3, "WordPress": 2}
-    urls_found = len(vulnerabilities) + sum(len(urls) for urls in additional_files.values() if isinstance(urls, list))
+    print(f"Значения для Dashboard: unique_assets={unique_assets}, live_assets={live_assets}, app_endpoints={app_endpoints}, urls_found={urls_found}")
+    print(f"Top 10 Ports: {top_ports}")
     
     # HTML шаблон
     report_title = os.path.splitext(os.path.basename(input_filename))[0]
@@ -467,7 +523,7 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
                     <td>{len(vuln_by_severity.get("unknown", []))}</td>
                 </tr>
                 <tr>
-                    <td>All Vulnerabilities</td>
+                    <td>Всего</td>
                     <td>{len(vulnerabilities)}</td>
                 </tr>
 """
@@ -716,7 +772,7 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
             new Chart(document.getElementById('assetsChart'), {{
                 type: 'bar',
                 data: {{
-                    labels: ['Total Assets', 'Live Assets', 'Applications'],
+                    labels: ['Total Assets', 'Live Assets', 'Application Endpoints'],
                     datasets: [{{
                         label: 'Count',
                         data: [{unique_assets}, {live_assets}, {app_endpoints}],
