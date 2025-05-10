@@ -22,30 +22,41 @@ git clone https://github.com/reewardius/Outpost && cd Outpost
 git clone https://github.com/reewardius/nuclei-fast-templates && git clone https://github.com/reewardius/nuclei-dast-templates
 ```
 
-## Run:
-You can run the script in two ways:
+# Usage
 
-**1. Using a file with root domains**
-
-Create a file (e.g., root.txt) and add your target **ROOT** domains, one per line:
-```bash
-nano root.txt   # Add root domains for scanning
-```
-Then run the script like this:
+🔹 Scan a list of root domains (with subdomain enumeration):
 ```bash
 bash general_easm.sh -f root.txt
 ```
-**2. Using a single domain directly**
+Subfinder will run to enumerate subdomains.
 
-You can also scan a single domain:
+All other scanning phases will follow.
+
+🔹 Scan a list of root domains (without subdomain enumeration):
 ```bash
-bash general_easm.sh -d https://target.com
+bash general_easm.sh -f root.txt -ds
 ```
----
+🔹 Scan a single domain (with subdomain enumeration):
+```bash
+bash general_easm.sh -d example.com
+```
+🔹 Scan a single domain (without subdomain enumeration):
+```bash
+bash general_easm.sh -d example.com -ds
+```
 
-## Features:
-- Domain and network services reconnaissance.
-- Vulnerability, misconfiguration and secrets scanning.
-- Fast scanning using default and custom Nuclei templates.
-- Includes templates for FUZZ testing (DAST).
-- Report generation for deeper analysis (example report: `general_report.html`).
+## 📄 Final Report
+
+After the script completes, all findings are merged and summarized into a single file: `general_report.html`
+
+This HTML file consolidates results from:
+
+- Vulnerability scans (Nuclei)
+- Subdomain takeovers
+- JS secrets
+- Fuzzing results
+- Crawled endpoints
+- S3 bucket checks
+- and more...
+
+📌 **Open `general_report.html` in your browser to review the full recon and scanning results in a human-readable format.**
