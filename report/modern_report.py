@@ -213,6 +213,13 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
         severity = vuln["severity"].lower()
         vuln_by_severity[severity].append(vuln)
     
+    # Debug logging for Nuclei vulnerabilities
+    print("Nuclei vulnerabilities breakdown:")
+    for severity in severity_order:
+        count = len(vuln_by_severity.get(severity, []))
+        print(f"{severity.capitalize()}: {count}")
+    print(f"Total vulnerabilities: {len(vulnerabilities)}")
+    
     base_dir = os.path.dirname(input_filename)
     unique_assets = parse_subs_file(os.path.join(base_dir, "subs.txt"))
     live_assets = parse_alive_http_services_file(os.path.join(base_dir, "alive_http_services.txt"))
@@ -271,8 +278,30 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
         .dark .border-b {
             border-color: #4b5563;
         }
-        .dark .bg-red-100, .dark .bg-orange-100, .dark .bg-yellow-100, .dark .bg-green-100, .dark .bg-blue-100, .dark .bg-gray-100, .dark .bg-purple-100, .dark .bg-indigo-100 {
+        /* Specific dark mode colors for each severity to maintain distinction */
+        .dark .bg-red-100 {
+            background-color: #7f1d1d;
+        }
+        .dark .bg-orange-100 {
+            background-color: #7c2d12;
+        }
+        .dark .bg-yellow-100 {
+            background-color: #713f12;
+        }
+        .dark .bg-green-100 {
+            background-color: #14532d;
+        }
+        .dark .bg-blue-100 {
+            background-color: #1e3a8a;
+        }
+        .dark .bg-gray-100 {
             background-color: #374151;
+        }
+        .dark .bg-purple-100 {
+            background-color: #4c1d95;
+        }
+        .dark .bg-indigo-100 {
+            background-color: #312e81;
         }
         .dark .text-red-700, .dark .text-orange-700, .dark .text-yellow-700, .dark .text-green-700, .dark .text-blue-700, .dark .text-gray-700, .dark .text-purple-700, .dark .text-indigo-700 {
             color: #d1d5db;
@@ -295,7 +324,7 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 font-sans leading-normal tracking-normal transition-colors duration-300">
-    <div class="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="container max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <header class="mb-8 flex justify-between items-center">
             <div>
                 <h1 class="text-4xl font-bold text-gray-900 dark:text-white">Vulnerability Report</h1>
@@ -311,33 +340,33 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
             <div class="mb-6">
                 <h3 class="text-xl font-medium text-gray-800 dark:text-white mb-3">Nuclei Vulnerabilities</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="bg-red-100 dark:bg-red-900 p-4 rounded-lg">
-                        <span class="text-red-700 dark:text-red-300 font-medium">Critical</span>
-                        <p class="text-2xl font-bold text-red-800 dark:text-red-200">""" + str(len(vuln_by_severity.get("critical", []))) + """</p>
+                    <div class="bg-red-100 dark:bg-red-900 p-6 rounded-lg min-h-[100px]">
+                        <span class="text-red-700 dark:text-red-300 font-medium text-sm">Critical</span>
+                        <p class="text-xl font-bold text-red-800 dark:text-red-200">""" + str(len(vuln_by_severity.get("critical", []))) + """</p>
                     </div>
-                    <div class="bg-orange-100 dark:bg-orange-900 p-4 rounded-lg">
-                        <span class="text-orange-700 dark:text-orange-300 font-medium">High</span>
-                        <p class="text-2xl font-bold text-orange-800 dark:text-orange-200">""" + str(len(vuln_by_severity.get("high", []))) + """</p>
+                    <div class="bg-orange-100 dark:bg-orange-900 p-6 rounded-lg min-h-[100px]">
+                        <span class="text-orange-700 dark:text-orange-300 font-medium text-sm">High</span>
+                        <p class="text-xl font-bold text-orange-800 dark:text-orange-200">""" + str(len(vuln_by_severity.get("high", []))) + """</p>
                     </div>
-                    <div class="bg-yellow-100 dark:bg-yellow-900 p-4 rounded-lg">
-                        <span class="text-yellow-700 dark:text-yellow-300 font-medium">Medium</span>
-                        <p class="text-2xl font-bold text-yellow-800 dark:text-yellow-200">""" + str(len(vuln_by_severity.get("medium", []))) + """</p>
+                    <div class="bg-yellow-100 dark:bg-yellow-900 p-6 rounded-lg min-h-[100px]">
+                        <span class="text-yellow-700 dark:text-yellow-300 font-medium text-sm">Medium</span>
+                        <p class="text-xl font-bold text-yellow-800 dark:text-yellow-200">""" + str(len(vuln_by_severity.get("medium", []))) + """</p>
                     </div>
-                    <div class="bg-green-100 dark:bg-green-900 p-4 rounded-lg">
-                        <span class="text-green-700 dark:text-green-300 font-medium">Low</span>
-                        <p class="text-2xl font-bold text-green-800 dark:text-green-200">""" + str(len(vuln_by_severity.get("low", []))) + """</p>
+                    <div class="bg-green-100 dark:bg-green-900 p-6 rounded-lg min-h-[100px]">
+                        <span class="text-green-700 dark:text-green-300 font-medium text-sm">Low</span>
+                        <p class="text-xl font-bold text-green-800 dark:text-green-200">""" + str(len(vuln_by_severity.get("low", []))) + """</p>
                     </div>
-                    <div class="bg-blue-100 dark:bg-blue-900 p-4 rounded-lg">
-                        <span class="text-blue-700 dark:text-blue-300 font-medium">Info</span>
-                        <p class="text-2xl font-bold text-blue-800 dark:text-blue-200">""" + str(len(vuln_by_severity.get("info", []))) + """</p>
+                    <div class="bg-blue-100 dark:bg-blue-900 p-6 rounded-lg min-h-[100px]">
+                        <span class="text-blue-700 dark:text-blue-300 font-medium text-sm">Info</span>
+                        <p class="text-xl font-bold text-blue-800 dark:text-blue-200">""" + str(len(vuln_by_severity.get("info", []))) + """</p>
                     </div>
-                    <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
-                        <span class="text-gray-700 dark:text-gray-300 font-medium">Unknown</span>
-                        <p class="text-2xl font-bold text-gray-800 dark:text-gray-200">""" + str(len(vuln_by_severity.get("unknown", []))) + """</p>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg min-h-[100px]">
+                        <span class="text-gray-700 dark:text-gray-300 font-medium text-sm">Unknown</span>
+                        <p class="text-xl font-bold text-gray-800 dark:text-gray-200">""" + str(len(vuln_by_severity.get("unknown", []))) + """</p>
                     </div>
-                    <div class="bg-purple-100 dark:bg-purple-900 p-4 rounded-lg">
-                        <span class="text-purple-700 dark:text-purple-300 font-medium">Total</span>
-                        <p class="text-2xl font-bold text-purple-800 dark:text-purple-200">""" + str(len(vulnerabilities)) + """</p>
+                    <div class="bg-purple-100 dark:bg-purple-900 p-6 rounded-lg min-h-[100px]">
+                        <span class="text-purple-700 dark:text-purple-300 font-medium text-sm">Total</span>
+                        <p class="text-xl font-bold text-purple-800 dark:text-purple-200">""" + str(len(vulnerabilities)) + """</p>
                     </div>
                 </div>
             </div>
@@ -353,9 +382,9 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
                          "juicypath": "JuicyPath Findings",
                          "s3scanner": "S3Scanner Findings"}.get(file_type, file_type)
             html_output += """
-                    <div class="bg-indigo-100 dark:bg-indigo-900 p-4 rounded-lg">
-                        <span class="text-indigo-700 dark:text-indigo-300 font-medium">""" + file_name + """</span>
-                        <p class="text-2xl font-bold text-indigo-800 dark:text-indigo-200">""" + str(len(file_data)) + """</p>
+                    <div class="bg-indigo-100 dark:bg-indigo-900 p-6 rounded-lg min-h-[100px]">
+                        <span class="text-indigo-700 dark:text-indigo-300 font-medium text-sm">""" + file_name + """</span>
+                        <p class="text-xl font-bold text-indigo-800 dark:text-indigo-200">""" + str(len(file_data)) + """</p>
                     </div>
 """
 
@@ -377,7 +406,7 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
                         "juicypath": "JuicyPath",
                         "s3scanner": "S3Scanner"}.get(file_type, file_type.capitalize())
             html_output += f"""
-                <button class="tablinks px-4 py-3 text-white font-medium hover:bg-gray-700 dark:hover:bg-gray-800 focus:outline-none" onclick="openTab(event, '{file_type.capitalize()}Tab')">{tab_name}</button>
+                <button class="tablinks px-4 py-3 text-white font-medium hover:bg-gray-7 dark:hover:bg-gray-800 focus:outline-none" onclick="openTab(event, '{file_type.capitalize()}Tab')">{tab_name}</button>
 """
 
     html_output += """
@@ -477,7 +506,7 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
                                 <tr class="bg-gray-50 dark:bg-gray-700">
                                     <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">CVE/Template</th>
                                     <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Protocol</th>
-                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">URL</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[300px]">URL</th>
                                     <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Additional Information</th>
                                 </tr>
                             </thead>
@@ -498,7 +527,7 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
                                 <tr class="border-b dark:border-gray-700">
                                     <td class="px-4 py-3 text-sm text-gray-800 dark:text-gray-200">{cve_escaped}</td>
                                     <td class="px-4 py-3 text-sm text-gray-800 dark:text-gray-200">{protocol_escaped}</td>
-                                    <td class="px-4 py-3 text-sm break-all"><a href="{url_escaped}" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">{url_escaped}</a></td>
+                                    <td class="px-4 py-3 text-sm break-all break-words max-w-[400px]"><a href="{url_escaped}" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">{url_escaped}</a></td>
                                     <td class="px-4 py-3">{extractors_html}</td>
                                 </tr>
 """
@@ -567,7 +596,7 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
                     <thead>
                         <tr class="bg-gray-50 dark:bg-gray-700">
                             <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">#</th>
-                            <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">URL</th>
+                            <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[300px]">URL</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -577,7 +606,7 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
                     html_output += f"""
                         <tr class="border-b dark:border-gray-700">
                             <td class="px-4 py-3 text-sm text-gray-800 dark:text-gray-200">{i}</td>
-                            <td class="px-4 py-3 text-sm break-all"><a href="{url_escaped}" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">{url_escaped}</a></td>
+                            <td class="px-4 py-3 text-sm break-all break-words max-w-[400px]"><a href="{url_escaped}" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">{url_escaped}</a></td>
                         </tr>
 """
             html_output += """
@@ -621,6 +650,11 @@ def generate_html_report(vulnerabilities, input_filename, additional_files=None)
             if (localStorage.getItem('theme') === 'dark') {
                 document.documentElement.classList.add('dark');
             }
+
+            // Log screen and container width for debugging
+            console.log('Screen width: ' + window.innerWidth + 'px');
+            const container = document.querySelector('.container');
+            console.log('Container width: ' + container.offsetWidth + 'px');
 
             // Chart.js configuration
             const chartOptions = {
