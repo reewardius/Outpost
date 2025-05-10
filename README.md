@@ -28,10 +28,6 @@ git clone https://github.com/reewardius/nuclei-fast-templates && git clone https
 ```bash
 bash general_easm.sh -f root.txt
 ```
-Subfinder will run to enumerate subdomains.
-
-All other scanning phases will follow.
-
 🔹 Scan a list of root domains (without subdomain enumeration):
 ```bash
 bash general_easm.sh -f root.txt -ds
