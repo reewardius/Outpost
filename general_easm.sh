@@ -38,7 +38,7 @@ if [ "$RUN_SUBFINDER" = true ]; then
     eval $SUBFINDER_CMD
 fi
 eval $NAABU_CMD
-httpx -l naabu.txt -rl 500 -t 200 -o alive_http_services.txt
+httpx -l naabu.txt -rl 500 -t 200 -o alive_http_services.txt && httpx -l naabu.txt -rl 500 -t 200 -td -sc -o tech-detect.txt
 
 echo "[*] Starting S3Scanner..."
 s3scanner -bucket-file naabu.txt -provider aws -threads 16 | grep exists > s3scanner.txt || true
