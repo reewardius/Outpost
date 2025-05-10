@@ -23,10 +23,19 @@ elif [[ "$1" == "-d" && -n "$2" ]]; then
     echo "[*] Using single domain: $TARGET_DOMAIN"
     DOMAIN_MODE="single"
     ROOT_INPUT="$TARGET_DOMAIN"
-    RUN_SUBFINDER=false
-    NAABU_CMD="naabu -host $TARGET_DOMAIN -s s -tp 100 -ec -c 50 -o naabu.txt"
+
+    if [[ "$3" == "-ds" ]]; then
+        # Пропуск subfinder и передача домена в naabu
+        echo "[*] Skipping Subfinder, passing directly to naabu"
+        RUN_SUBFINDER=false
+        NAABU_CMD="naabu -host $TARGET_DOMAIN -s s -tp 100 -ec -c 50 -o naabu.txt"
+    else
+        RUN_SUBFINDER=true
+        SUBFINDER_CMD="subfinder -d $TARGET_DOMAIN -all -silent -o subs.txt"
+        NAABU_CMD="naabu -l subs.txt -s s -tp 100 -ec -c 50 -o naabu.txt"
+    fi
 else
-    echo "Usage: $0 [-f file.txt | -d target.com]"
+    echo "Usage: $0 [-f file.txt | -d target.com] [-ds (optional)]"
     exit 1
 fi
 
@@ -109,6 +118,6 @@ echo "[*] Nuclei Active DAST Scanning..."
 nuclei -l katana.jsonl -im jsonl -itags blind-xss -t nuclei-dast-templates/ -pc 100 -c 100 -rl 1000 -bs 100 -o nuclei-dast-templates-results.txt
 
 echo "[*] Merging Results and Generating Final Report..."
-cat js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt nuclei_fast_templates.txt second_order_takeover.txt nuclei_config_exposures.txt nuclei-dast-templates-results.txt | sort -u > general.txt && python3 nuclei.py general.txt
+cat js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt nuclei_fast_templates.txt second_order_takeover.txt nuclei_config_exposures.txt nuclei-dast-templates-results.txt | sort -u > general.txt && python3 nuclei2.py general.txt
 
 echo "[*] General Nuclei Report Generated -> Open general_report.html"
