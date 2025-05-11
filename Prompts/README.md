@@ -1,7 +1,7 @@
 # Prompts
 **Prompt 1: Comprehensive Report Analysis**
 ```
-As a professional pentester, I need you to analyze the attached pentest report [attach report or paste content]. Please perform the following:
+As a professional pentester, I need you to analyze the attached pentest report. Please perform the following:
 1. Summarize the key findings, including the total number of vulnerabilities by severity (Critical, High, Medium, Low, Info).
 2. Identify and validate all vulnerabilities with provided PoCs, focusing on Critical and High-severity issues. For each validated vulnerability, provide:
    - Description of the vulnerability.
@@ -17,7 +17,7 @@ Ensure the response is professional, concise, and actionable, formatted in a cle
 ```
 **Prompt 2: Focused Critical and High-Severity Analysis**
 ```
-I am a pentester analyzing a pentest report [attach report or paste content]. Please focus on Critical and High-severity vulnerabilities and perform the following:
+I am a pentester analyzing a pentest report. Please focus on Critical and High-severity vulnerabilities and perform the following:
 1. List all Critical and High-severity vulnerabilities with their details (e.g., CVE/Template, URL, protocol, method).
 2. Validate each vulnerability with the provided PoC, confirming exploitability. Provide:
    - Step-by-step PoC reproduction instructions.
@@ -30,7 +30,7 @@ Keep the response concise, professional, and formatted for quick reference (e.g.
 ```
 **Prompt 3: False Positive Filtering and Validation**
 ```
-As a pentester, I need you to analyze the attached pentest report [attach report or paste content] with a focus on filtering false positives. Please:
+As a pentester, I need you to analyze the attached pentest report with a focus on filtering false positives. Please:
 1. Review all vulnerabilities, paying special attention to Medium and Low-severity issues, as well as fuzzing-based results (e.g., XSS fuzzing, CRLF injection).
 2. Identify potential false positives and explain why they may not be exploitable (e.g., lack of impact, incorrect context, or WAF protection).
 3. Validate true positives with provided PoCs, providing:
@@ -44,7 +44,7 @@ Ensure the response is clear, professional, and structured for easy review.
 ```
 **Prompt 4: Specific Vulnerability Deep Dive**
 ```
-I am a pentester analyzing a pentest report [attach report or paste content]. Please perform a deep dive into [specify vulnerability type, e.g., XSS, SSRF, LFI] vulnerabilities and provide:
+I am a pentester analyzing a pentest report. Please perform a deep dive into [specify vulnerability type, e.g., XSS, SSRF, LFI] vulnerabilities and provide:
 1. A list of all instances of [vulnerability type] in the report, including severity, URL, protocol, and method.
 2. Validation of each instance with the provided PoC, including:
    - Step-by-step reproduction instructions.
@@ -57,7 +57,7 @@ Format the response professionally with clear sections and actionable insights.
 ```
 **Prompt 5: Ffuf Findings and Exposed Resource Analysis**
 ```
-As a pentester, I need you to analyze the Ffuf findings in the attached pentest report [attach report or paste content]. Please:
+As a pentester, I need you to analyze the Ffuf findings in the attached pentest report. Please:
 1. List all discovered URLs or resources (e.g., files, directories, endpoints) and their potential significance.
 2. Validate each finding to determine if it exposes sensitive information (e.g., configuration files, source code, admin panels).
 3. For each significant finding, provide:
@@ -71,7 +71,7 @@ Ensure the response is professional, concise, and formatted for clarity (e.g., t
 ```
 **Prompt 6: Report Comparison and Trend Analysis**
 ```
-I am a pentester analyzing multiple pentest reports [attach reports or paste content]. Please perform a comparative analysis and:
+I am a pentester analyzing multiple pentest reports. Please perform a comparative analysis and:
 1. Summarize the vulnerabilities found in each report, categorized by severity (Critical, High, Medium, Low, Info).
 2. Identify recurring vulnerabilities across reports (e.g., XSS, misconfigurations) and assess their persistence.
 3. Validate recurring vulnerabilities with provided PoCs, providing:
@@ -85,7 +85,7 @@ Format the response professionally with clear comparisons (e.g., tables, charts 
 ```
 **Prompt 7: Remediation Plan Development**
 ```
-As a pentester, I need you to analyze the attached pentest report [attach report or paste content] and develop a remediation plan. Please:
+As a pentester, I need you to analyze the attached pentest report and develop a remediation plan. Please:
 1. List all confirmed vulnerabilities, prioritized by severity (Critical, High, Medium, Low).
 2. For each vulnerability, provide:
    - A brief description and its impact.
