@@ -4,12 +4,12 @@
 
 ## **Requirements:**
 
-- Golang (for installing pdtm tools)
+- Golang
 - Python3
 - Bash
 - Linux or WSL
 
-## Install ProjectDiscovery Tools and Templates:
+## Install Tools and Download Nuclei Templates:
 
 ```bash
 go install -v github.com/projectdiscovery/pdtm/cmd/pdtm@latest && pdtm -install-all
