@@ -9,10 +9,10 @@ getJS -input alive_http_services.txt -output js.txt -complete -threads 200
 # Переменная с именем входного файла
 INPUT_FILE="js.txt"
 
-# Проверяем, существует ли файл
-if [[ ! -f "$INPUT_FILE" ]]; then
-  echo "Файл $INPUT_FILE не найден!"
-  exit 1
+# Проверяем, существует ли файл и не пуст ли он
+if [[ ! -s "$INPUT_FILE" ]]; then
+  echo "[!] Файл $INPUT_FILE не найден или пуст — пропускаем запуск nuclei."
+  exit 0
 fi
 
 # Очистка старых временных файлов
