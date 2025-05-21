@@ -2,6 +2,15 @@
 set -e
 set -o pipefail
 
+if command -v python3 &> /dev/null; then
+    PYTHON_CMD="python3"
+elif command -v python &> /dev/null; then
+    PYTHON_CMD="python"
+else
+    echo "Python не установлен на системе."
+    exit 1
+fi
+
 # Checking arguments
 if [[ "$1" == "-f" && -n "$2" ]]; then
     echo "[*] Using domain list from file: $2"
@@ -50,7 +59,7 @@ fi
 # Clearing previous results
 rm -f subs.txt naabu.txt alive_http_services.txt fuzz_results.json fuzz_output.txt fp_domains_alive.txt tech-detect.txt nuclei_config_exposures.txt passive.txt katana_uniq.txt katana.txt sensitive_matches.txt sensitive.txt js.txt juicypath_matches.txt juicypath.txt second_order_takeover.txt js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt general.txt katana.jsonl nuclei-dast-templates-results.txt nuclei_fast_templates.txt s3scanner.txt part_* part_*.out op.txt fuzz_output*.txt paths.txt fp_domains*.txt new_paths.txt swagger_get_200.txt third_order_takeover.txt nuclei-dast-hidden-params-results.txt endpoints.txt swagger_endpoints.txt katana_*.txt
 
-rm -f top.txt && wget https://raw.githubusercontent.com/reewardius/bbFuzzing.txt/refs/heads/main/top.txt
+rm -f top.txt > /dev/null 2>&1 && wget -q https://raw.githubusercontent.com/reewardius/bbFuzzing.txt/refs/heads/main/top.txt > /dev/null 2>&1
 
 echo "[*] Starting Recon..."
 if [ "$RUN_SUBFINDER" = true ]; then
@@ -68,7 +77,7 @@ s3scanner -bucket-file naabu.txt -provider aws -threads 16 | grep exists > s3sca
 # Run Ffuf
 echo "[*] Starting Web Fuzzing..."
 ffuf -u URL/TOP -w alive_http_services.txt:URL -w top.txt:TOP -t 1000 -ac -mc 200 -o fuzz_results.json -fs 0
-python3 delete_falsepositives.py -j fuzz_results.json -o fuzz_output1.txt -fp fp_domains1.txt
+$PYTHON_CMD delete_falsepositives.py -j fuzz_results.json -o fuzz_output1.txt -fp fp_domains1.txt
 httpx -l fp_domains1.txt -rl 500 -t 200 -o fp_domains_alive.txt
 nuclei -l fp_domains_alive.txt -tags config,exposure -es unknown -c 100 -rl 1000 -o nuclei_config_exposures.txt
 
@@ -84,7 +93,7 @@ uro -i passive.txt -o katana_uniq.txt
 # Collecting Sensitive Data from Wayback Archive
 echo "[*] Collecting Sensitive Data from Wayback Archive..."
 katana -u "$ROOT_INPUT" -ps -o katana.txt
-python3 sensitive.py
+$PYTHON_CMD sensitive.py
 httpx -l sensitive_matches.txt -mc 200 -o sensitive.txt
 httpx -l juicypath_matches.txt -mc 200 -o juicy_temp.txt && uro -i juicy_temp.txt -o juicypath.txt && rm -f juicy_temp.txt
 
@@ -93,7 +102,7 @@ echo "[*] Starting Fuzzing Multiple Paths from Wayback Archive..."
 uro -i katana.txt -o op.txt
 cat op.txt | unfurl format %p | anew paths.txt > /dev/null 2>&1 && sed 's|^/||' paths.txt > new_paths.txt
 rm -f fuzz_results.json && ffuf -u URL/TOP -w alive_http_services.txt:URL -w new_paths.txt:TOP -t 1000 -ac -mc 200 -o fuzz_results.json -fs 0
-python3 delete_falsepositives.py -j fuzz_results.json -o fuzz_output2.txt -fp fp_domains2.txt
+$PYTHON_CMD delete_falsepositives.py -j fuzz_results.json -o fuzz_output2.txt -fp fp_domains2.txt
 
 # JS Endpoints Spraying
 echo "[*] JS Endpoints Spraying..."
@@ -101,12 +110,12 @@ chmod +x js_spraying.sh && bash js_spraying.sh
 
 # Second-Order Hijacking
 echo "[*] Starting Second-Order Hijacking..."
-rm -f domains_output/*.txt && python3 links.py
+rm -f domains_output/*.txt && $PYTHON_CMD links.py
 
 if [ -f domains_output/full.txt ]; then
     nuclei -l domains_output/full.txt -profile subdomain-takeovers -nh -rl 500 -o second_order_takeover.txt
 else
-    echo "[-] File domains_output/full.txt not found, skipping Second-Order Hijacking scan."
+    echo "[-] File domains_output/full.txt not found, skipping Second-Order Hijacking scan..."
 fi
 
 
@@ -115,7 +124,7 @@ echo "[*] Starting Third-Order Hijacking..."
 if [ -f finder/http_links.txt ]; then
     nuclei -l finder/http_links.txt -profile subdomain-takeovers -nh -rl 500 -o third_order_takeover.txt
 else
-    echo "[-] File finder/http_links.txt not found, skipping Third-Order Hijacking scan."
+    echo "[-] File finder/http_links.txt not found, skipping Third-Order Hijacking scan..."
 fi
 
 
@@ -126,6 +135,9 @@ if [[ "$1" == "-f" ]]; then
 elif [[ "$1" == "-d" ]]; then
     chmod +x nuclei.sh && bash nuclei.sh
 fi
+
+
+
 
 # Logic of running custom templates and JS templates
 if [[ "$1" == "-f" ]]; then
@@ -147,12 +159,12 @@ echo "[*] Swagger Scanning..."
 if [ -f alive_http_services.txt ]; then
     nuclei -l alive_http_services.txt -tags swagger,openapi -o swagger_endpoints.txt
     if [ -f swagger_endpoints.txt ]; then
-        python3 swagger_check.py
+        $PYTHON_CMD swagger_check.py
     else
-        echo "[-] File swagger_endpoints.txt not found, skipping swagger_check.py."
+        echo "[-] File swagger_endpoints.txt not found, skipping swagger_check.py..."
     fi
 else
-    echo "[-] File alive_http_services.txt not found, skipping Swagger Scanning."
+    echo "[-] File alive_http_services.txt not found, skipping Swagger Scanning..."
 fi
 # All working GET endpoints (status code 200) are saved in swagger_get_200.txt.
 
@@ -169,30 +181,30 @@ echo "[*] Nuclei Active DAST Scanning..."
 if [ -f katana.jsonl ]; then
     nuclei -l katana.jsonl -im jsonl -itags blind-xss -t nuclei-dast-templates/ -pc 100 -c 100 -rl 1000 -bs 100 -o nuclei-dast-templates-results.txt
 else
-    echo "[-] File katana.jsonl not found, skipping nuclei scan."
+    echo "[-] File katana.jsonl not found, skipping nuclei scan..."
 fi
 
 
 # Nuclei Active DAST Scanning Hidden Parameters
 echo "[*] Nuclei Active DAST Scanning Hidden Parameters..."
-python3 hidden-param-extractor.py
+$PYTHON_CMD hidden-param-extractor.py
 
 if [ -f katana_hidden_params_fuzzing.txt ]; then
     uro -i katana_hidden_params_fuzzing.txt -o katana_urls_with_hidden_params.txt
 else
-    echo "[-] File katana_hidden_params_fuzzing.txt not found, skipping uro command."
+    echo "[-] File katana_hidden_params_fuzzing.txt not found, skipping uro command..."
 fi
 
 if [ -f katana_urls_with_hidden_params.txt ]; then
     nuclei -l katana_urls_with_hidden_params.txt -t nuclei-dast-templates/ -dast -etags fuzzing-req-header,fuzzing-req-cookie -pc 100 -c 100 -rl 1000 -bs 100 -o nuclei-dast-hidden-params-results.txt
 else
-    echo "[-] File katana_urls_with_hidden_params.txt not found, skipping nuclei scan."
+    echo "[-] File katana_urls_with_hidden_params.txt not found, skipping nuclei scan..."
 fi
 
 
 # Merging Results and Generating Final Report
 echo "[*] Merging Results and Generating Final Report..."
-cat js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt nuclei_fast_templates.txt second_order_takeover.txt third_order_takeover.txt nuclei_config_exposures.txt nuclei-dast-templates-results.txt nuclei-dast-hidden-params-results.txt 2>/dev/null | sort -u > general.txt && python3 modern_report.py general.txt
+cat js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt nuclei_fast_templates.txt second_order_takeover.txt third_order_takeover.txt nuclei_config_exposures.txt nuclei-dast-templates-results.txt nuclei-dast-hidden-params-results.txt 2>/dev/null | sort -u > general.txt && $PYTHON_CMD modern_report.py general.txt
 
 # Generating an overall modern report
 echo "[*] General Nuclei Report Generated -> Open general_report.html"
