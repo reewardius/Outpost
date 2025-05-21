@@ -204,7 +204,8 @@ fi
 
 # Merging Results and Generating Final Report
 echo "[*] Merging Results and Generating Final Report..."
-cat js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt nuclei_fast_templates.txt second_order_takeover.txt third_order_takeover.txt nuclei_config_exposures.txt nuclei-dast-templates-results.txt nuclei-dast-hidden-params-results.txt 2>/dev/null | sort -u > general.txt && $PYTHON_CMD modern_report.py general.txt
+cat js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt nuclei_fast_templates.txt second_order_takeover.txt third_order_takeover.txt nuclei_config_exposures.txt nuclei-dast-templates-results.txt nuclei-dast-hidden-params-results.txt 2>/dev/null || true | sort -u > general.txt
+python3 modern_report.py general.txt
 
 # Generating an overall modern report
 echo "[*] General Nuclei Report Generated -> Open general_report.html"
