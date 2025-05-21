@@ -48,7 +48,9 @@ else
 fi
 
 # Clearing previous results
-rm -f subs.txt naabu.txt alive_http_services.txt fuzz_results.json fuzz_output.txt fp_domains_alive.txt tech-detect.txt nuclei_config_exposures.txt passive.txt katana_uniq.txt katana.txt sensitive_matches.txt sensitive.txt js.txt juicypath_matches.txt juicypath.txt second_order_takeover.txt js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt general.txt katana.jsonl nuclei-dast-templates-results.txt nuclei_fast_templates.txt s3scanner.txt part_* part_*.out op.txt fuzz_output*.txt paths.txt fp_domains*.txt new_paths.txt swagger_get_200.txt third_order_takeover.txt nuclei-dast-hidden-params-results.txt endpoints.txt
+rm -f subs.txt naabu.txt alive_http_services.txt fuzz_results.json fuzz_output.txt fp_domains_alive.txt tech-detect.txt nuclei_config_exposures.txt passive.txt katana_uniq.txt katana.txt sensitive_matches.txt sensitive.txt js.txt juicypath_matches.txt juicypath.txt second_order_takeover.txt js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt general.txt katana.jsonl nuclei-dast-templates-results.txt nuclei_fast_templates.txt s3scanner.txt part_* part_*.out op.txt fuzz_output*.txt paths.txt fp_domains*.txt new_paths.txt swagger_get_200.txt third_order_takeover.txt nuclei-dast-hidden-params-results.txt endpoints.txt swagger_endpoints.txt katana_*.txt
+
+rm -f top.txt && wget https://raw.githubusercontent.com/reewardius/bbFuzzing.txt/refs/heads/main/top.txt
 
 echo "[*] Starting Recon..."
 if [ "$RUN_SUBFINDER" = true ]; then
