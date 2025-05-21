@@ -57,7 +57,7 @@ else
 fi
 
 # Clearing previous results
-rm -f subs.txt naabu.txt alive_http_services.txt fuzz_results.json fuzz_output.txt fp_domains_alive.txt tech-detect.txt nuclei_config_exposures.txt passive.txt katana_uniq.txt katana.txt sensitive_matches.txt sensitive.txt js.txt juicypath_matches.txt juicypath.txt second_order_takeover.txt js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt general.txt katana.jsonl nuclei-dast-templates-results.txt nuclei_fast_templates.txt s3scanner.txt part_* part_*.out op.txt fuzz_output*.txt paths.txt fp_domains*.txt new_paths.txt swagger_get_200.txt third_order_takeover.txt nuclei-dast-hidden-params-results.txt endpoints.txt swagger_endpoints.txt katana_*.txt
+rm -f subs.txt naabu.txt alive_http_services.txt fuzz_results.json fuzz_output.txt fp_domains_alive.txt tech-detect.txt nuclei_config_exposures.txt passive.txt katana_uniq.txt katana.txt sensitive_matches.txt sensitive.txt js.txt juicypath_matches.txt juicypath.txt nuclei_second_order_takeover.txt js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt general.txt katana.jsonl nuclei-dast-templates-results.txt nuclei_fast_templates.txt s3scanner.txt part_* part_*.out op.txt fuzz_output*.txt paths.txt fp_domains*.txt new_paths.txt swagger_get_200.txt nuclei_third_order_takeover.txt nuclei-dast-hidden-params-results.txt endpoints.txt swagger_endpoints.txt katana_*.txt nuclei_js.txt
 
 rm -f top.txt > /dev/null 2>&1 && wget -q https://raw.githubusercontent.com/reewardius/bbFuzzing.txt/refs/heads/main/top.txt > /dev/null 2>&1
 
@@ -113,7 +113,7 @@ echo "[*] Starting Second-Order Hijacking..."
 rm -f domains_output/*.txt && $PYTHON_CMD links.py
 
 if [ -f domains_output/full.txt ]; then
-    nuclei -l domains_output/full.txt -profile subdomain-takeovers -nh -rl 500 -o second_order_takeover.txt
+    nuclei -l domains_output/full.txt -profile subdomain-takeovers -nh -rl 500 -o nuclei_second_order_takeover.txt
 else
     echo "[-] File domains_output/full.txt not found, skipping Second-Order Hijacking scan..."
 fi
@@ -122,7 +122,7 @@ fi
 # Third-Order Hijacking
 echo "[*] Starting Third-Order Hijacking..."
 if [ -f finder/http_links.txt ]; then
-    nuclei -l finder/http_links.txt -profile subdomain-takeovers -nh -rl 500 -o third_order_takeover.txt
+    nuclei -l finder/http_links.txt -profile subdomain-takeovers -nh -rl 500 -o nuclei_third_order_takeover.txt
 else
     echo "[-] File finder/http_links.txt not found, skipping Third-Order Hijacking scan..."
 fi
@@ -204,8 +204,7 @@ fi
 
 # Merging Results and Generating Final Report
 echo "[*] Merging Results and Generating Final Report..."
-cat js_nuclei.txt nuclei.txt nuclei-dast-fast-templates-results.txt nuclei_fast_templates.txt second_order_takeover.txt third_order_takeover.txt nuclei_config_exposures.txt nuclei-dast-templates-results.txt nuclei-dast-hidden-params-results.txt 2>/dev/null || true | sort -u > general.txt
-python3 modern_report.py general.txt
+cat nuclei*.txt | sort -u > general.txt && python3 modern_report.py general.txt
 
 # Generating an overall modern report
 echo "[*] General Nuclei Report Generated -> Open general_report.html"
