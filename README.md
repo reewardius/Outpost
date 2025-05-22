@@ -17,6 +17,7 @@ go install -v github.com/projectdiscovery/katana/cmd/katana@v1.1.0
 go install -v github.com/tomnomnom/anew@latest && go install github.com/tomnomnom/unfurl@latest
 go install -v github.com/sa7mon/s3scanner@latest && go install github.com/003random/getJS/v2@latest
 go install -v github.com/ffuf/ffuf/v2@latest
+go install -v github.com/iangcarroll/cookiemonster/cmd/cookiemonster@latest
 python3 -m pip install --user pipx && python3 -m pipx ensurepath && pipx install uro
 git clone https://github.com/reewardius/Outpost && cd Outpost
 git clone https://github.com/reewardius/nuclei-fast-templates && git clone https://github.com/reewardius/nuclei-dast-templates
