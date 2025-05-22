@@ -25,7 +25,7 @@ split -n l/3 "$INPUT_FILE" part_
 parallel -j 3 "nuclei -l {} -tags token,tokens -es unknown -rl 1000 -c 100 -o {}.out" ::: part_*
 
 # Объединение всех выходных файлов в один
-cat part_*.out > js_nuclei.txt
+cat part_*.out > nuclei_js.txt
 
 # Удаление временных файлов
 rm -f part_* part_*.out

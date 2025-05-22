@@ -16,4 +16,4 @@ if [[ ! -s "js.txt" ]]; then
 fi
 
 # Запуск nuclei
-nuclei -l js.txt -tags token,tokens -es unknown -rl 1000 -c 100 -o js_nuclei.txt
+nuclei -l js.txt -tags token,tokens -es unknown -rl 1000 -c 100 -o nuclei_js.txt
