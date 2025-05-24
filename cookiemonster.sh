@@ -46,7 +46,7 @@ while IFS= read -r target; do
   unset token
   unset cookie_map
 
-  findings=$(echo "$target" | nuclei -t cookie-extractor.yaml -silent)
+  findings=$(echo "$target" | nuclei -t templates/cookie-extraсtor.yaml -silent)
 
   if [ -n "$findings" ]; then
     mapfile -t pairs < <(echo "$findings" | grep -oP '[a-zA-Z0-9._-]+=[^;]+' | grep -viE '^(Path|Domain|Expires|HttpOnly|Secure|SameSite|Max-Age)=')
@@ -96,4 +96,5 @@ while IFS= read -r target; do
       fi
     done
   fi
+  
 done < alive_http_services.txt
