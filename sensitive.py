@@ -1,3 +1,8 @@
+# katana -u vulnweb.com -ps -o katana.txt
+# python3 sensitive.py
+# httpx -l sensitive_matches.txt -mc 200 -o sensitive.txt
+# httpx -l juicypath_matches.txt -mc 200 -o juicy_temp.txt && uro -i juicy_temp.txt -o juicypath.txt && rm -f juicy_temp.txt
+
 import re
 
 # Указываем входные и выходные файлы
